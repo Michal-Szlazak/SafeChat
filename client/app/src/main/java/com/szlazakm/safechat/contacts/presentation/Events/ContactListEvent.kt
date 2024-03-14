@@ -1,4 +1,4 @@
-package com.szlazakm.safechat.contacts.presentation
+package com.szlazakm.safechat.contacts.presentation.Events
 
 import com.szlazakm.safechat.contacts.domain.Contact
 
