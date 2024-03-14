@@ -1,6 +1,5 @@
-package com.szlazakm.safechat.contacts.presentation.components
+package com.szlazakm.safechat.contacts.presentation.components.contactList
 
-import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -17,24 +16,31 @@ import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Create
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.szlazakm.safechat.contacts.domain.Contact
-import com.szlazakm.safechat.contacts.presentation.ContactListEvent
-import com.szlazakm.safechat.contacts.presentation.ContactListState
+import com.szlazakm.safechat.contacts.presentation.Events.ContactListEvent
+import com.szlazakm.safechat.contacts.presentation.ScreenRoutes
+import com.szlazakm.safechat.contacts.presentation.States.ContactListState
 
 @Composable
 fun ContactListScreen(
-    state: ContactListState,
-    newContact: Contact?,
-    onEvent: (ContactListEvent) -> Unit
+    navController: NavController,
+    viewModel: ContactListViewModel
 ) {
+
+    val state by viewModel.state.collectAsState()
+
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    onEvent(ContactListEvent.OnNewConversationClick)
+                    navController.navigate(ScreenRoutes.AddContact.route)
                 },
                 shape = RoundedCornerShape(20.dp)
                 ) {
@@ -53,15 +59,6 @@ fun ContactListScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-//
-//            item {
-//                RecentlyAddedContacts(
-//                    contacts = state.recentlyAddedContacts,
-//                    onClick = {
-//                        onEvent(ContactListEvent.SelectContact(it))
-//                    }
-//                )
-//            }
 
             item {
                 Text(
@@ -79,11 +76,42 @@ fun ContactListScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
-                            onEvent(ContactListEvent.OnConversationClick(contact))
+                            viewModel.onEvent(ContactListEvent.OnConversationClick(contact))
+                            navController.navigate(
+                                ScreenRoutes.Chat.route.replace("{contactId}", contact.id.toString())
+                            )
                         }
                         .padding(horizontal = 16.dp)
                 )
             }
         }
+    }
+}
+
+@Preview(name = "My Composable Preview")
+@Composable
+fun ContactListScreenPreview() {
+    val fakeState = ContactListState(contacts = listOf(
+        Contact(
+            id = 2,
+            firstName = "John",
+            lastName = "Doe",
+            phoneNumber = "1234567890",
+            email = "john@example.com",
+            photo = null
+        ),
+        Contact(
+            id = 1,
+            firstName = "Jane",
+            lastName = "Doe",
+            phoneNumber = "0987654321",
+            email = "jane@example.com",
+            photo = null
+        )
+    ))
+
+    val onEvent: (ContactListEvent) -> Unit = { event ->
+        // Do nothing or print the event for testing purposes
+        println("Received event: $event")
     }
 }

@@ -1,4 +1,4 @@
-package com.szlazakm.safechat.contacts.presentation.components
+package com.szlazakm.safechat.contacts.presentation.components.contactList
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background

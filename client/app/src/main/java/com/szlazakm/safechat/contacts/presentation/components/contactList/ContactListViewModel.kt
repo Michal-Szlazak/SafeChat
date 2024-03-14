@@ -1,24 +1,19 @@
-package com.szlazakm.safechat.contacts.presentation.components
+package com.szlazakm.safechat.contacts.presentation.components.contactList
 
-import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.szlazakm.safechat.contacts.data.ContactRepository
+import com.szlazakm.safechat.contacts.data.Repositories.ContactRepository
 import com.szlazakm.safechat.contacts.domain.Contact
-import com.szlazakm.safechat.contacts.domain.ContactDataSource
-import com.szlazakm.safechat.contacts.presentation.ContactListEvent
-import com.szlazakm.safechat.contacts.presentation.ContactListState
+import com.szlazakm.safechat.contacts.presentation.Events.ContactListEvent
+import com.szlazakm.safechat.contacts.presentation.States.ContactListState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -61,64 +56,23 @@ class ContactListViewModel @Inject constructor(
 
         when(event) {
 
-            ContactListEvent.DismissConversation -> {
-                viewModelScope.launch {
-                    _state.update { it.copy(
-                        isSelectedChatSheetOpen = false,
-                        isAddChatSheetOpen = false
-                    ) }
-                    delay(300L) //Delay for animation -> fix
-                    _state.update { it.copy(
-                        selectedContact = null
-                    ) }
-                }
-            }
-
             is ContactListEvent.OnConversationClick -> {
                 _state.update { it.copy(
-                    selectedContact = event.contact,
-                    isSelectedChatSheetOpen = true,
-                    isAddChatSheetOpen = false
+                    selectedContact = event.contact
                 ) }
                 newContact = event.contact
             }
 
             ContactListEvent.OnNewConversationClick -> {
-                _state.update { it.copy(
-                    isAddChatSheetOpen = true
-                ) }
+
                 newContact = Contact(
-                    id = null,
+                    id = 1,
                     firstName = "",
                     lastName = "",
                     email = "",
                     phoneNumber = "",
                     photo = null
                 )
-            }
-
-            is ContactListEvent.OnFirstNameChanged -> {
-                newContact = newContact?.copy(
-                    firstName = event.value
-                )
-            }
-            is ContactListEvent.OnLastNameChanged -> {
-                newContact = newContact?.copy(
-                    lastName = event.value
-                )
-            }
-
-            ContactListEvent.DismissNewConversation -> {
-                viewModelScope.launch {
-                    _state.update { it.copy(
-                        isAddChatSheetOpen = false
-                    ) }
-                    delay(300L) // Animation delay
-                    newContact = null
-                    _state.update { it.copy(
-                        selectedContact = null
-                    ) }
-                }
             }
         }
     }

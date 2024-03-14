@@ -1,4 +1,4 @@
-package com.szlazakm.safechat.contacts.presentation.components
+package com.szlazakm.safechat.contacts.presentation.components.contactList
 
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
