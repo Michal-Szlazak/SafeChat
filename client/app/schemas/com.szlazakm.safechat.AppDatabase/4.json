@@ -1,0 +1,194 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 4,
+    "identityHash": "e6066de6e25f6b5ac8aaca621a363f2a",
+    "entities": [
+      {
+        "tableName": "contact_entity",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `firstName` TEXT NOT NULL, `lastName` TEXT NOT NULL, `phoneNumber` TEXT NOT NULL, `email` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `photo` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "firstName",
+            "columnName": "firstName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastName",
+            "columnName": "lastName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "phoneNumber",
+            "columnName": "phoneNumber",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "email",
+            "columnName": "email",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "photo",
+            "columnName": "photo",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "message_entity",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `content` TEXT NOT NULL, `senderId` INTEGER NOT NULL, `receiverId` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, FOREIGN KEY(`senderId`) REFERENCES `contact_entity`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`receiverId`) REFERENCES `contact_entity`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "content",
+            "columnName": "content",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "senderId",
+            "columnName": "senderId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "receiverId",
+            "columnName": "receiverId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_message_entity_senderId",
+            "unique": false,
+            "columnNames": [
+              "senderId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_message_entity_senderId` ON `${TABLE_NAME}` (`senderId`)"
+          },
+          {
+            "name": "index_message_entity_receiverId",
+            "unique": false,
+            "columnNames": [
+              "receiverId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_message_entity_receiverId` ON `${TABLE_NAME}` (`receiverId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "contact_entity",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "senderId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "contact_entity",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "receiverId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "user_entity",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`phoneNumber` TEXT NOT NULL, `firstName` TEXT NOT NULL, `lastName` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, PRIMARY KEY(`phoneNumber`))",
+        "fields": [
+          {
+            "fieldPath": "phoneNumber",
+            "columnName": "phoneNumber",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "firstName",
+            "columnName": "firstName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastName",
+            "columnName": "lastName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "phoneNumber"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e6066de6e25f6b5ac8aaca621a363f2a')"
+    ]
+  }
+}
