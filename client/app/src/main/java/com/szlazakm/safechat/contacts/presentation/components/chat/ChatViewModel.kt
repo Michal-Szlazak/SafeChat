@@ -68,10 +68,10 @@ class ChatViewModel @Inject constructor(
                 }
                 chatState.value = state.value.copy(messages = updatedMessages)
             }
-            ChatEvent.StartTyping -> {
+            is ChatEvent.StartTyping -> {
                 chatState.value = chatState.value.copy(isTyping = true)
             }
-            ChatEvent.StopTyping -> {
+            is ChatEvent.StopTyping -> {
                 chatState.value = chatState.value.copy(isTyping = false)
             }
         }
