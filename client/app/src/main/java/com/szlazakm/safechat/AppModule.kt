@@ -5,10 +5,13 @@ import android.content.Context
 import androidx.room.Room
 import com.szlazakm.safechat.contacts.data.Repositories.ContactRepository
 import com.szlazakm.safechat.contacts.data.Repositories.MessageRepository
+import com.szlazakm.safechat.webclient.services.UserService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ViewModelComponent
+import retrofit2.Retrofit
+import retrofit2.converter.jackson.JacksonConverterFactory
 
 @Module
 @InstallIn(ViewModelComponent::class)
@@ -38,4 +41,11 @@ class AppModule {
         ).build()
     }
 
+    @Provides
+    fun provideRetrofit(): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl("http://192.168.0.230:8080")
+            .addConverterFactory(JacksonConverterFactory.create())
+            .build()
+    }
 }

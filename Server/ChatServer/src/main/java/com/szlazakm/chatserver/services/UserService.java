@@ -1,8 +1,8 @@
 package com.szlazakm.chatserver.services;
 
 import com.szlazakm.chatserver.auth.SignatureVerifier;
-import com.szlazakm.chatserver.dtos.SPKCreateDTO;
-import com.szlazakm.chatserver.dtos.UserCreateDTO;
+import com.szlazakm.chatserver.dtos.*;
+import com.szlazakm.chatserver.entities.OPK;
 import com.szlazakm.chatserver.entities.User;
 import com.szlazakm.chatserver.exceptionHandling.exceptions.UserNotFoundException;
 import com.szlazakm.chatserver.mappers.UserMapper;
@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.security.SignatureException;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -48,4 +49,35 @@ public class UserService {
         }
     }
 
+    public UserDTO getUserByPhoneNumber(String phoneNumber) {
+
+        Optional<User> optUser = userRepository.getUserByPhoneNumber(phoneNumber);
+        User user = optUser.orElseThrow(UserNotFoundException::new);
+        return UserDTO.builder()
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .phoneNumber(user.getPhoneNumber())
+                .build();
+    }
+
+    public KeyBundleDTO getKeyBundle(KeyBundleGetDTO keyBundleGetDTO) {
+
+        Optional<User> optUser = userRepository.findById(keyBundleGetDTO.getUserId());
+        User user = optUser.orElseThrow(UserNotFoundException::new);
+        List<OPK> opkList = user.getOPKS();
+
+        String opk = "";
+
+        if(!opkList.isEmpty()) {
+            opk = opkList.get(0).onetimePreKey;
+            opkList.remove(0);
+        }
+
+        return KeyBundleDTO.builder()
+                .identityKey(user.getIdentityKey())
+                .signedPreKey(user.getSignedPreKey())
+                .signature(user.getSignature())
+                .onetimePreKey(opk)
+                .build();
+    }
 }

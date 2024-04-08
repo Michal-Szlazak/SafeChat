@@ -56,7 +56,6 @@ fun ChatScreen(
 @Composable
 fun MessageInput(onSend: (String) -> Unit) {
     var message by remember { mutableStateOf("") }
-    val keyboardController = LocalSoftwareKeyboardController.current
 
     TextField(
         value = message,

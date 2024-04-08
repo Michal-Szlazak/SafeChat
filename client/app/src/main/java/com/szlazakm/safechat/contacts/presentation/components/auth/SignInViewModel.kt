@@ -1,9 +1,13 @@
 package com.szlazakm.safechat.contacts.presentation.components.auth
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.szlazakm.safechat.contacts.data.Entities.UserEntity
 import com.szlazakm.safechat.contacts.data.Repositories.UserRepository
 import com.szlazakm.safechat.contacts.presentation.States.SignInState
+import com.szlazakm.safechat.utils.auth.generateKeyPair
+import com.szlazakm.safechat.webclient.dtos.UserCreateDTO
+import com.szlazakm.safechat.webclient.services.UserService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -14,20 +18,23 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import retrofit2.Retrofit
 import java.util.Date
 import javax.inject.Inject
 
 @HiltViewModel
 class SignInViewModel @Inject constructor(
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val retrofit: Retrofit
 ): ViewModel() {
 
     private val _state: MutableStateFlow<SignInState> = MutableStateFlow(SignInState())
     val state = _state.asStateFlow()
+    private val userService: UserService = retrofit.create(UserService::class.java)
 
     fun deleteUser() {
 
-        GlobalScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.IO) {
             userRepository.clearUserDB()
         }
     }
@@ -59,13 +66,37 @@ class SignInViewModel @Inject constructor(
 
     fun saveUser() {
 
+        val userCreateDTO = UserCreateDTO(
+            firstName = state.value.firstName,
+            lastName = state.value.lastName,
+            phoneNumber = state.value.phoneNumber,
+            identityKey = generateKeyPair().toString() //TODO: save the keys to db
+        )
+
+        println(userCreateDTO.toString())
+
+        viewModelScope.launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    userService.createUser(userCreateDTO).execute()
+                }
+                if (response.isSuccessful) {
+                    println("User created successfully. Response code: ${response.code()}")
+                } else {
+                    println("Failed to create user. Response code: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                println("Failed to create user: ${e.message}")
+            }
+        }
+
         val user = UserEntity(
             phoneNumber = state.value.phoneNumber,
             firstName = state.value.firstName,
             lastName = state.value.lastName,
             createdAt = Date()
         )
-        GlobalScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.IO) {
             userRepository.createUser(user)
         }
     }
@@ -74,6 +105,12 @@ class SignInViewModel @Inject constructor(
 
         _state.value = _state.value.copy(
             pin = pin
+        )
+    }
+
+    fun setPhoneNumber(phoneNumber: String) {
+        _state.value = _state.value.copy(
+            phoneNumber = phoneNumber
         )
     }
 

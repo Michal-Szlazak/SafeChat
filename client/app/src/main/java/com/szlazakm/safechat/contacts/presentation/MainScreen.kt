@@ -49,7 +49,7 @@ fun SafeChatApp(
     val startDestination = if (userExists) {
         ScreenRoutes.ContactList.route
     } else {
-        ScreenRoutes.SignIn.route
+        ScreenRoutes.SignInUserDetails.route
     }
 
     Scaffold { paddingValues ->
@@ -68,7 +68,10 @@ fun SafeChatApp(
                 SignInScreen(
                     state= state,
                     viewModel = signInViewModel,
-                    onSignInClick = {
+                    onSignInClick = { phoneExtension: String, phoneNumber: String ->
+
+                        val wholePhoneNumber = "$phoneExtension $phoneNumber"
+                        signInViewModel.setPhoneNumber(wholePhoneNumber)
                         navController.navigate(ScreenRoutes.VerifyPhoneNumber.route)
                     }
                 )
@@ -84,7 +87,8 @@ fun SafeChatApp(
                         //TODO(verify the code)
                         val verified = signInViewModel.verifyPhoneNumber(it)
                         if(verified) {
-                            navController.navigate(ScreenRoutes.SignInPin.route)
+                            signInViewModel.saveUser()
+                            navController.navigate(ScreenRoutes.ContactList.route)
                         } else {
                             navController.navigate(ScreenRoutes.SignIn.route)
                         }
@@ -103,8 +107,7 @@ fun SafeChatApp(
                             firstName,
                             lastName
                         )
-                        signInViewModel.saveUser()
-                        navController.navigate(ScreenRoutes.ContactList.route)
+                        navController.navigate(ScreenRoutes.SignInPin.route)
                     }
                 )
             }
@@ -129,7 +132,7 @@ fun SafeChatApp(
                     viewModel = signInViewModel,
                     onVerify = {
                         if(it) {
-                            navController.navigate(ScreenRoutes.SignInUserDetails.route)
+                            navController.navigate(ScreenRoutes.SignIn.route)
                         } else {
                             navController.navigate(ScreenRoutes.SignInPin.route)
                         }

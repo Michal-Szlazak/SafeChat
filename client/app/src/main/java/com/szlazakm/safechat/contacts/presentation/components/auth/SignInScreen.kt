@@ -29,7 +29,7 @@ import androidx.compose.foundation.text.KeyboardOptions as KeyboardOptions1
 fun SignInScreen(
     state: SignInState,
     viewModel: SignInViewModel,
-    onSignInClick: () -> Unit
+    onSignInClick: (phoneExtension: String, phoneNumber: String) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     // Phone extension and number inputs
@@ -69,7 +69,8 @@ fun SignInScreen(
             keyboardOptions = KeyboardOptions1(keyboardType = KeyboardType.Phone)
         )
         Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = onSignInClick) {
+        Button(onClick = {onSignInClick(phoneExtension, phoneNumber)}) {
+
             Text(text = "Continue")
         }
     }
