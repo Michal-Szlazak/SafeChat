@@ -7,6 +7,7 @@ import com.szlazakm.safechat.contacts.data.Repositories.UserRepository
 import com.szlazakm.safechat.contacts.presentation.States.SignInState
 import com.szlazakm.safechat.utils.auth.generateKeyPair
 import com.szlazakm.safechat.webclient.dtos.UserCreateDTO
+import com.szlazakm.safechat.webclient.dtos.VerifyPhoneNumberDTO
 import com.szlazakm.safechat.webclient.services.UserService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -18,6 +19,9 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import retrofit2.Retrofit
 import java.util.Date
 import javax.inject.Inject
@@ -51,9 +55,28 @@ class SignInViewModel @Inject constructor(
         emit(isUserCreated)
     }
 
-    fun verifyPhoneNumber(code: String): Boolean {
-        //TODO(verify the code)
-        return true
+    fun verifyPhoneNumber(code: String) {
+        val verifyPhoneNumberDTO = VerifyPhoneNumberDTO(code)
+
+        userService.verifyPhoneNumber(verifyPhoneNumberDTO).enqueue(object : Callback<Boolean> {
+            override fun onResponse(call: Call<Boolean>, response: Response<Boolean>) {
+                if (response.isSuccessful) {
+                    val result = response.body()
+                    if(result != null) {
+                        _state.value = _state.value.copy(
+                            phoneVerificationResult = result
+                        )
+                    }
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    
+                }
+            }
+
+            override fun onFailure(call: Call<Boolean>, t: Throwable) {
+
+            }
+        })
     }
 
     fun setUserDetails(firstName: String, lastName: String) {

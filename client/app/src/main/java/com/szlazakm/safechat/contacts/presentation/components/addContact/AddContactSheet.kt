@@ -90,6 +90,8 @@ fun AddContactScreen(
                     user = user,
                     onClick = {
 
+                        viewModel.createContactIfNotExists(state.userDTO)
+
                         navController.navigate(
                             ScreenRoutes.Chat.route.replace(
                                 "{contactId}",

@@ -76,7 +76,9 @@ class AddContactViewModel @Inject constructor(
         )
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                repository.createContact(contact)
+                if(!repository.contactExists(contact.id)) {
+                    repository.createContact(contact)
+                }
             }
         }
     }

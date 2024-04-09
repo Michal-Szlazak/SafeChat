@@ -7,5 +7,7 @@ data class SignInState(
     val firstName: String = "",
     val lastName: String = "",
     val pin: String = "",
-    val phoneVerifyError: String = ""
+    val phoneVerifyError: String = "",
+    val phoneVerificationResult : Boolean? = false,
+    val isLoading : Boolean = true
 )

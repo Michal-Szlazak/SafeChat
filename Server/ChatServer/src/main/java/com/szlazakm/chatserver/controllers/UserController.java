@@ -32,7 +32,13 @@ public class UserController {
         return userService.getUserByPhoneNumber(phoneNumber);
     }
 
+    @GetMapping("/keyBundle")
     public KeyBundleDTO getKeyBundle(@RequestBody KeyBundleGetDTO keyBundleGetDTO) {
         return userService.getKeyBundle(keyBundleGetDTO);
+    }
+
+    @PostMapping("/verify")
+    public boolean verifyPhoneNumber(@RequestBody VerifyPhoneNumberDTO verifyPhoneNumberDTO) {
+        return userService.verifyPhoneNumber(verifyPhoneNumberDTO);
     }
 }

@@ -34,7 +34,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         if (optionalUser.isEmpty()) {
             return new org.springframework.security.core.userdetails.User(
                     "123123123", "", true, true, true, true,
-                    getAuthorities(Arrays.asList(
+                    getAuthorities(Collections.singletonList(
                             roleRepository.findByName("ROLE_USER"))));
         }
 

@@ -3,6 +3,7 @@ package com.szlazakm.safechat.webclient.services
 import com.szlazakm.safechat.webclient.dtos.UserCreateDTO
 import com.szlazakm.safechat.webclient.dtos.UserDTO
 import com.szlazakm.safechat.webclient.dtos.UserGetDTO
+import com.szlazakm.safechat.webclient.dtos.VerifyPhoneNumberDTO
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -16,4 +17,7 @@ interface UserService {
 
     @GET("/api/user")
     fun findUserByPhoneNumber(@Query("phoneNumber") phoneNumber: String): Call<UserDTO>
+
+    @POST("/verify")
+    fun verifyPhoneNumber(@Body verifyPhoneNumberDTO: VerifyPhoneNumberDTO) : Call<Boolean>
 }

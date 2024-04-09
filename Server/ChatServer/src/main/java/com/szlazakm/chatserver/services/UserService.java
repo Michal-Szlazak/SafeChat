@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.security.SignatureException;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -80,5 +81,17 @@ public class UserService {
                 .signature(user.getSignature())
                 .onetimePreKey(opk)
                 .build();
+    }
+
+    public boolean verifyPhoneNumber(VerifyPhoneNumberDTO verifyPhoneNumberDTO) {
+
+        try {
+            TimeUnit.SECONDS.sleep(1);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        //TODO - code verification
+        return true;
     }
 }

@@ -71,4 +71,8 @@ class ContactRepository @Inject constructor(context: Context) {
     fun createContact(contact: Contact) {
         database.contactDao().insertContact(contact.toContactEntity())
     }
+
+    fun contactExists(id: UUID) : Boolean {
+        return database.contactDao().getContact(id) != null
+    }
 }
