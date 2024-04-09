@@ -8,12 +8,17 @@ import com.szlazakm.safechat.contacts.domain.Contact
 import com.szlazakm.safechat.contacts.domain.Message
 import com.szlazakm.safechat.contacts.presentation.Events.ChatEvent
 import com.szlazakm.safechat.contacts.presentation.States.ChatState
+import com.szlazakm.safechat.webclient.dtos.MessageDTO
+import com.szlazakm.safechat.webclient.services.WebSocketListenerImpl
+import com.szlazakm.safechat.webclient.services.connectWebSocket
+import com.szlazakm.safechat.webclient.services.sendMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.WebSocketListener
 import java.util.Date
 import java.util.UUID
 import javax.inject.Inject
@@ -26,8 +31,10 @@ class ChatViewModel @Inject constructor(
     private val chatState: MutableStateFlow<ChatState> =
         MutableStateFlow(ChatState())
     val state: StateFlow<ChatState> = chatState
+    private val webSocketConnection = connectWebSocket()
 
     init {
+
         viewModelScope.launch {
             // Fetch contacts and recent contacts from the messageRepository
             withContext(Dispatchers.IO) {
@@ -57,6 +64,15 @@ class ChatViewModel @Inject constructor(
                 chatState.value = chatState.value.copy(messages = updatedMessages)
             }
             is ChatEvent.SendMessage -> {
+
+                val messageDTO = MessageDTO(
+                    from = "from",
+                    to = state.value.selectedContact?.id.toString(),
+                    text = event.message
+                )
+
+                sendMessage(webSocketConnection, messageDTO)
+
                 val updatedMessages = state.value.messages.toMutableList().apply {
                     add(
                         Message.TextMessage(

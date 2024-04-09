@@ -13,4 +13,5 @@ public class UserCreateDTO {
     String lastName;
     String phoneNumber;
     String identityKey;
+    String pin;
 }

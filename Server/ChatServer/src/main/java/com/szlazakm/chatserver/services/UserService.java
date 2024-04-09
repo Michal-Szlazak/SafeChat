@@ -5,9 +5,9 @@ import com.szlazakm.chatserver.dtos.*;
 import com.szlazakm.chatserver.entities.OPK;
 import com.szlazakm.chatserver.entities.User;
 import com.szlazakm.chatserver.exceptionHandling.exceptions.UserNotFoundException;
-import com.szlazakm.chatserver.mappers.UserMapper;
 import com.szlazakm.chatserver.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.security.SignatureException;
@@ -20,11 +20,22 @@ import java.util.concurrent.TimeUnit;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final UserMapper userMapper;
     private final SignatureVerifier signatureVerifier;
+    private final BCryptPasswordEncoder passwordEncoder;
 
     public void createUser(UserCreateDTO userCreateDTO) {
-        userRepository.save(userMapper.toEntity(userCreateDTO));
+
+        String encodedPin = passwordEncoder.encode(userCreateDTO.getPin());
+
+        User user = User.builder()
+                .firstName(userCreateDTO.getFirstName())
+                .lastName(userCreateDTO.getLastName())
+                .phoneNumber(userCreateDTO.getPhoneNumber())
+                .identityKey(userCreateDTO.getIdentityKey())
+                .pin(encodedPin)
+                .build();
+
+        userRepository.save(user);
     }
 
     public void createSPK(SPKCreateDTO spkCreateDTO) throws SignatureException {

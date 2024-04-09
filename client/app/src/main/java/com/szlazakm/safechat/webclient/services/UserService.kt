@@ -18,6 +18,6 @@ interface UserService {
     @GET("/api/user")
     fun findUserByPhoneNumber(@Query("phoneNumber") phoneNumber: String): Call<UserDTO>
 
-    @POST("/verify")
+    @POST("/api/user/verify")
     fun verifyPhoneNumber(@Body verifyPhoneNumberDTO: VerifyPhoneNumberDTO) : Call<Boolean>
 }

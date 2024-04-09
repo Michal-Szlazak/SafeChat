@@ -9,6 +9,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -86,8 +87,7 @@ fun SafeChatApp(
                     viewModel = signInViewModel,
                     onVerifyClick = {
                         //TODO(verify the code)
-                        val verified = signInViewModel.verifyPhoneNumber(it)
-                        if(verified) {
+                        if(it) {
                             signInViewModel.saveUser()
                             navController.navigate(ScreenRoutes.ContactList.route)
                         } else {

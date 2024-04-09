@@ -32,6 +32,7 @@ public class User {
     @Column(unique = true, nullable = false)
     private String phoneNumber;
     private boolean isVerified;
+    private String pin;
 
     @OneToMany
     private List<OPK> OPKS;

@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import retrofit2.Call
 import retrofit2.Callback
@@ -25,6 +26,8 @@ import retrofit2.Response
 import retrofit2.Retrofit
 import java.util.Date
 import javax.inject.Inject
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 @HiltViewModel
 class SignInViewModel @Inject constructor(
@@ -55,28 +58,31 @@ class SignInViewModel @Inject constructor(
         emit(isUserCreated)
     }
 
-    fun verifyPhoneNumber(code: String) {
+    suspend fun verifyPhoneNumber(code: String): Boolean {
         val verifyPhoneNumberDTO = VerifyPhoneNumberDTO(code)
 
-        userService.verifyPhoneNumber(verifyPhoneNumberDTO).enqueue(object : Callback<Boolean> {
-            override fun onResponse(call: Call<Boolean>, response: Response<Boolean>) {
-                if (response.isSuccessful) {
-                    val result = response.body()
-                    if(result != null) {
-                        _state.value = _state.value.copy(
-                            phoneVerificationResult = result
-                        )
+        // Return a suspended coroutine, allowing it to be seamlessly integrated into a coroutine scope
+        return suspendCancellableCoroutine { continuation ->
+            userService.verifyPhoneNumber(verifyPhoneNumberDTO).enqueue(object : Callback<Boolean> {
+                override fun onResponse(call: Call<Boolean>, response: Response<Boolean>) {
+                    if (response.isSuccessful) {
+                        val result = response.body()
+                        if(result != null) {
+                            continuation.resume(result)
+                        } else {
+                            continuation.resumeWithException(NullPointerException("Response body is null"))
+                        }
+                    } else {
+                        val errorBody = response.errorBody()?.string()
+                        continuation.resumeWithException(Exception("Failed with response code: ${response.code()}, message: $errorBody"))
                     }
-                } else {
-                    val errorBody = response.errorBody()?.string()
-                    
                 }
-            }
 
-            override fun onFailure(call: Call<Boolean>, t: Throwable) {
-
-            }
-        })
+                override fun onFailure(call: Call<Boolean>, t: Throwable) {
+                    continuation.resumeWithException(t)
+                }
+            })
+        }
     }
 
     fun setUserDetails(firstName: String, lastName: String) {
@@ -93,7 +99,8 @@ class SignInViewModel @Inject constructor(
             firstName = state.value.firstName,
             lastName = state.value.lastName,
             phoneNumber = state.value.phoneNumber,
-            identityKey = generateKeyPair().toString() //TODO: save the keys to db
+            identityKey = generateKeyPair().toString(), //TODO: save the keys to db
+            pin = state.value.pin
         )
 
         println(userCreateDTO.toString())
