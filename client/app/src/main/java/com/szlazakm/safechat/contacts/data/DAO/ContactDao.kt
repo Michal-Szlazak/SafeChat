@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import com.szlazakm.safechat.contacts.data.Entities.ContactEntity
+import java.util.UUID
 
 @Dao
 interface ContactDao {
@@ -21,7 +22,7 @@ interface ContactDao {
     fun deleteContact(contact: ContactEntity)
 
     @Query("SELECT * FROM contact_entity WHERE id = :id")
-    fun getContact(id: Long): ContactEntity?
+    fun getContact(id: UUID): ContactEntity?
 
     @Query("DELETE FROM contact_entity")
     fun deleteAllContacts()

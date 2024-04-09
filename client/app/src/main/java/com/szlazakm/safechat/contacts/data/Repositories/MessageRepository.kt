@@ -10,6 +10,7 @@ import com.szlazakm.safechat.contacts.data.Entities.toTextMessage
 import com.szlazakm.safechat.contacts.domain.Contact
 import com.szlazakm.safechat.contacts.domain.Message
 import java.util.Date
+import java.util.UUID
 import javax.inject.Inject
 
 class MessageRepository @Inject constructor(context: Context) {
@@ -26,7 +27,7 @@ class MessageRepository @Inject constructor(context: Context) {
         messageDao.deleteAllMessages()
 
         val user1 = ContactEntity(
-            id = 1,
+            id = UUID.fromString("389ea0de-0758-4636-9ef0-6a38d1a12162"),
             firstName = "John",
             lastName = "Doe",
             phoneNumber = "1234567890",
@@ -35,7 +36,7 @@ class MessageRepository @Inject constructor(context: Context) {
             photo = "/path/to/image.jpg"
         )
         val user2 = ContactEntity(
-            id = 2,
+            id = UUID.fromString("389ea0de-0758-4636-9ef0-6a38d1a12163"),
             firstName = "Jane",
             lastName = "Doe",
             phoneNumber = "0987654321",

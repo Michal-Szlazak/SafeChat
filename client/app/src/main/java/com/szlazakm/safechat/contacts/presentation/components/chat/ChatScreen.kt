@@ -18,6 +18,7 @@ import com.szlazakm.safechat.contacts.domain.Message
 import com.szlazakm.safechat.contacts.presentation.Events.ChatEvent
 import com.szlazakm.safechat.contacts.presentation.States.ChatState
 import java.util.Date
+import java.util.UUID
 
 @Composable
 fun ChatScreen(
@@ -82,7 +83,7 @@ fun MessageInput(onSend: (String) -> Unit) {
 fun ChatScreenPreview() {
 
     val sender = Contact(
-        id = 1,
+        id = UUID.randomUUID(),
         firstName = "John",
         lastName = "Doe",
         email = "john@example.com",
@@ -91,7 +92,7 @@ fun ChatScreenPreview() {
     )
 
     val receiver = Contact(
-        id = 1,
+        id = UUID.randomUUID(),
         firstName = "John",
         lastName = "Doe",
         email = "john@example.com",

@@ -34,6 +34,7 @@ import com.szlazakm.safechat.contacts.presentation.components.contactList.Contac
 import com.szlazakm.safechat.contacts.presentation.components.contactList.ContactListViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.util.UUID
 
 @Composable
 fun SafeChatApp(
@@ -154,17 +155,17 @@ fun SafeChatApp(
             composable(
                 route = ScreenRoutes.Chat.route,
                 arguments = listOf(
-                    navArgument("contactId") { type = NavType.LongType }
+                    navArgument("contactId") { type = NavType.StringType }
                 )
             ) { backStackEntry ->
-                val contactId = backStackEntry.arguments?.getLong("contactId")
-
+                val contactId = backStackEntry.arguments?.getString("contactId")
+                val uuid = UUID.fromString(contactId)
                 var contact by remember { mutableStateOf<Contact?>(null) }
 
-                LaunchedEffect(contactId) {
-                    contactId?.let { id ->
+                LaunchedEffect(uuid) {
+                    contactId?.let { _ ->
                         val fetchedContact = withContext(Dispatchers.IO) {
-                            chatViewModel.getContact(id)
+                            chatViewModel.getContact(uuid)
                         }
                         contact = fetchedContact
                     }

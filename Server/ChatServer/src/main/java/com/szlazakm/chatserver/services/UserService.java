@@ -54,6 +54,7 @@ public class UserService {
         Optional<User> optUser = userRepository.getUserByPhoneNumber(phoneNumber);
         User user = optUser.orElseThrow(UserNotFoundException::new);
         return UserDTO.builder()
+                .userId(user.getUserId())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .phoneNumber(user.getPhoneNumber())

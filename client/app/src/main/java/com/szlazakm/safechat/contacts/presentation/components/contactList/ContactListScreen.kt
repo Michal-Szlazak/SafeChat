@@ -27,6 +27,7 @@ import com.szlazakm.safechat.contacts.domain.Contact
 import com.szlazakm.safechat.contacts.presentation.Events.ContactListEvent
 import com.szlazakm.safechat.contacts.presentation.ScreenRoutes
 import com.szlazakm.safechat.contacts.presentation.States.ContactListState
+import java.util.UUID
 
 @Composable
 fun ContactListScreen(
@@ -93,7 +94,7 @@ fun ContactListScreen(
 fun ContactListScreenPreview() {
     val fakeState = ContactListState(contacts = listOf(
         Contact(
-            id = 2,
+            id = UUID.randomUUID(),
             firstName = "John",
             lastName = "Doe",
             phoneNumber = "1234567890",
@@ -101,7 +102,7 @@ fun ContactListScreenPreview() {
             photo = null
         ),
         Contact(
-            id = 1,
+            id = UUID.randomUUID(),
             firstName = "Jane",
             lastName = "Doe",
             phoneNumber = "0987654321",

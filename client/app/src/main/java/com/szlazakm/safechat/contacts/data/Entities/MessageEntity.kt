@@ -6,6 +6,7 @@ import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
 import com.szlazakm.safechat.contacts.domain.Message
 import java.util.Date
+import java.util.UUID
 
 @Entity(tableName = "message_entity",
     foreignKeys = [
@@ -24,9 +25,9 @@ data class MessageEntity(
     val id: Long = 0,
     val content: String,
     @ColumnInfo(index = true)
-    val senderId: Long,
+    val senderId: UUID,
     @ColumnInfo(index = true)
-    val receiverId: Long,
+    val receiverId: UUID,
     val timestamp: Date
 )
 

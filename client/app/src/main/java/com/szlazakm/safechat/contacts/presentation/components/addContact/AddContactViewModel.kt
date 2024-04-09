@@ -2,7 +2,10 @@ package com.szlazakm.safechat.contacts.presentation.components.addContact
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.szlazakm.safechat.contacts.data.Entities.ContactEntity
 import com.szlazakm.safechat.contacts.data.Repositories.ContactRepository
+import com.szlazakm.safechat.contacts.domain.Contact
 import com.szlazakm.safechat.contacts.presentation.States.AddContactState
 import com.szlazakm.safechat.contacts.presentation.States.ChatState
 import com.szlazakm.safechat.webclient.dtos.UserDTO
@@ -18,6 +21,7 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -60,6 +64,21 @@ class AddContactViewModel @Inject constructor(
         }
     }
 
+    fun createContactIfNotExists(userDTO: UserDTO) {
 
+        val contact = Contact(
+            id = userDTO.userId,
+            firstName = userDTO.firstName,
+            lastName = userDTO.lastName,
+            phoneNumber = userDTO.phoneNumber,
+            email = "",
+            photo = null
+        )
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                repository.createContact(contact)
+            }
+        }
+    }
 
 }

@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -66,7 +67,7 @@ class ContactListViewModel @Inject constructor(
             ContactListEvent.OnNewConversationClick -> {
 
                 newContact = Contact(
-                    id = 1,
+                    id = UUID.randomUUID(),
                     firstName = "",
                     lastName = "",
                     email = "",

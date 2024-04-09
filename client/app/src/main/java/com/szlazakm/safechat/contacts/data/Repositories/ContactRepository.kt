@@ -6,6 +6,8 @@ import com.szlazakm.safechat.AppDatabase
 import com.szlazakm.safechat.contacts.data.Entities.ContactEntity
 import com.szlazakm.safechat.contacts.data.Entities.toContact
 import com.szlazakm.safechat.contacts.domain.Contact
+import com.szlazakm.safechat.contacts.domain.toContactEntity
+import java.util.UUID
 import javax.inject.Inject
 
 class ContactRepository @Inject constructor(context: Context) {
@@ -24,7 +26,7 @@ class ContactRepository @Inject constructor(context: Context) {
         // Insert hardcoded contacts
         val contacts = listOf(
             ContactEntity(
-                id = 1,
+                id = UUID.fromString("389ea0de-0758-4636-9ef0-6a38d1a12162"),
                 firstName = "John",
                 lastName = "Doe",
                 phoneNumber = "1234567890",
@@ -33,7 +35,7 @@ class ContactRepository @Inject constructor(context: Context) {
                 photo = "/path/to/image.jpg"
             ),
             ContactEntity(
-                id = 2,
+                id = UUID.fromString("389ea0de-0758-4636-9ef0-6a38d1a12163"),
                 firstName = "Jane",
                 lastName = "Doe",
                 phoneNumber = "0987654321",
@@ -62,7 +64,11 @@ class ContactRepository @Inject constructor(context: Context) {
         database.contactDao().deleteAllContacts()
     }
 
-    fun getContact(userId: Long) : Contact?{
+    fun getContact(userId: UUID) : Contact?{
         return database.contactDao().getContact(userId)?.toContact()
+    }
+
+    fun createContact(contact: Contact) {
+        database.contactDao().insertContact(contact.toContactEntity())
     }
 }

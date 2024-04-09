@@ -13,7 +13,7 @@ import com.szlazakm.safechat.contacts.data.Entities.UserEntity
 
 @Database(
     entities = [ContactEntity::class, MessageEntity::class, UserEntity::class],
-    version = 4
+    version = 5
 )
 @TypeConverters(LocalDateTimeConverter::class)
 abstract class AppDatabase : RoomDatabase() {

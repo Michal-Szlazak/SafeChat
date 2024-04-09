@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Date
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -27,7 +28,6 @@ class ChatViewModel @Inject constructor(
     val state: StateFlow<ChatState> = chatState
 
     init {
-        println("hello there in chat")
         viewModelScope.launch {
             // Fetch contacts and recent contacts from the messageRepository
             withContext(Dispatchers.IO) {
@@ -46,7 +46,7 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    fun getContact(userId: Long) : Contact? {
+    fun getContact(userId: UUID) : Contact? {
         return contactRepository.getContact(userId)
     }
 
@@ -61,7 +61,7 @@ class ChatViewModel @Inject constructor(
                     add(
                         Message.TextMessage(
                             content = event.message,
-                            senderId = 1,
+                            senderId = UUID.randomUUID(),
                             Date()
                         )
                     )
