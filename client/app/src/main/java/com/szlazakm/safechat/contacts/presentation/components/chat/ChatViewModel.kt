@@ -9,6 +9,7 @@ import com.szlazakm.safechat.contacts.domain.Message
 import com.szlazakm.safechat.contacts.presentation.Events.ChatEvent
 import com.szlazakm.safechat.contacts.presentation.States.ChatState
 import com.szlazakm.safechat.webclient.dtos.MessageDTO
+import com.szlazakm.safechat.webclient.services.StompService
 import com.szlazakm.safechat.webclient.services.WebSocketListenerImpl
 import com.szlazakm.safechat.webclient.services.connectWebSocket
 import com.szlazakm.safechat.webclient.services.sendMessage
@@ -31,10 +32,12 @@ class ChatViewModel @Inject constructor(
     private val chatState: MutableStateFlow<ChatState> =
         MutableStateFlow(ChatState())
     val state: StateFlow<ChatState> = chatState
-    private val webSocketConnection = connectWebSocket()
+    private val stompService: StompService = StompService("ws://192.168.0.230:8080/ws")
+
+
 
     init {
-
+        stompService.connect()
         viewModelScope.launch {
             // Fetch contacts and recent contacts from the messageRepository
             withContext(Dispatchers.IO) {
@@ -66,12 +69,12 @@ class ChatViewModel @Inject constructor(
             is ChatEvent.SendMessage -> {
 
                 val messageDTO = MessageDTO(
-                    from = "from",
-                    to = state.value.selectedContact?.id.toString(),
+                    from = "4e4e772b-66e9-4af0-b46d-efafe86a11fc",
+                    to = "4e4e772b-66e9-4af0-b46d-efafe86a11fc",
                     text = event.message
                 )
 
-                sendMessage(webSocketConnection, messageDTO)
+                stompService.sendMessage("/app/room", messageDTO)
 
                 val updatedMessages = state.value.messages.toMutableList().apply {
                     add(

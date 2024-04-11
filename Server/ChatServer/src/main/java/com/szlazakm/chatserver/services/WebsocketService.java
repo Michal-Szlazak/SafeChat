@@ -21,11 +21,9 @@ public class WebsocketService {
 
     @MessageMapping("/room")
     public void sendSpecific(
-            @Payload MessageDTO msg,
-            Principal user,
-            @Header("simpSessionId") String sessionId) throws Exception {
+            @Payload MessageDTO msg) throws Exception {
         System.out.println("Got message: " + msg.getText());
-        System.out.println(user.getName());
+//        System.out.println(user.getName());
         OutputMessageDTO out = new OutputMessageDTO(
                 msg.getFrom(),
                 msg.getText(),
