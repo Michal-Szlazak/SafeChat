@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.szlazakm.safechat.contacts.data.Repositories.ContactRepository
+import com.szlazakm.safechat.contacts.data.Repositories.UserRepository
 import com.szlazakm.safechat.contacts.domain.Contact
 import com.szlazakm.safechat.contacts.presentation.Events.ContactListEvent
 import com.szlazakm.safechat.contacts.presentation.States.ContactListState
@@ -28,12 +29,21 @@ class ContactListViewModel @Inject constructor(
     private val _state = MutableStateFlow(ContactListState())
     val state: StateFlow<ContactListState> = _state
 
+    fun clearContacts() {
+        viewModelScope.launch {
+
+            withContext(Dispatchers.IO) {
+                repository.clearContacts()
+            }
+        }
+    }
+
     init {
         viewModelScope.launch {
             // Fetch contacts and recent contacts from the repository
-            withContext(Dispatchers.IO) {
-                repository.insertHardcodedContacts()
-            }
+//            withContext(Dispatchers.IO) {
+//                repository.insertHardcodedContacts()
+//            }
 
             val contacts = withContext(Dispatchers.IO) {
                 repository.getContacts()
@@ -50,6 +60,7 @@ class ContactListViewModel @Inject constructor(
 
         }
     }
+
     var newContact: Contact? by mutableStateOf(null)
         private set
 
@@ -67,7 +78,6 @@ class ContactListViewModel @Inject constructor(
             ContactListEvent.OnNewConversationClick -> {
 
                 newContact = Contact(
-                    id = UUID.randomUUID(),
                     firstName = "",
                     lastName = "",
                     email = "",

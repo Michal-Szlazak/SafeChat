@@ -11,8 +11,8 @@ interface UserDao {
     @Insert
     fun insertUser(contact: UserEntity)
 
-    @Query("SELECT * FROM user_entity WHERE phoneNumber = :phoneNumber LIMIT 1")
-    fun getUser(phoneNumber: String): UserEntity?
+    @Query("SELECT * FROM user_entity LIMIT 1")
+    fun getUser(): UserEntity?
 
     @Query("SELECT COUNT(*) FROM user_entity")
     fun isUserCreated(): Boolean

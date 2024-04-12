@@ -41,7 +41,7 @@ fun ChatScreen(
             ) {
                 // You need to obtain the state from the ViewModel
                 val state = viewModel.state.collectAsState().value
-                MessageList(messages = state.messages)
+                MessageList(viewModel, messages = state.messages)
                 Spacer(modifier = Modifier.weight(1f))
                 // Pass the ViewModel's onEvent function to the MessageInput
                 MessageInput(onSend = { message ->
@@ -75,34 +75,5 @@ fun MessageInput(onSend: (String) -> Unit) {
                 }
             }
         )
-    )
-}
-
-@Preview(name = "Chat Screen Preview")
-@Composable
-fun ChatScreenPreview() {
-
-    val sender = Contact(
-        id = UUID.randomUUID(),
-        firstName = "John",
-        lastName = "Doe",
-        email = "john@example.com",
-        phoneNumber = "1234567890",
-        photo = null
-    )
-
-    val receiver = Contact(
-        id = UUID.randomUUID(),
-        firstName = "John",
-        lastName = "Doe",
-        email = "john@example.com",
-        phoneNumber = "1234567890",
-        photo = null
-    )
-
-    val fakeState = ChatState(messages = listOf(
-        Message.TextMessage("content", senderId = sender.id, Date())),
-        receiver,
-        false
     )
 }

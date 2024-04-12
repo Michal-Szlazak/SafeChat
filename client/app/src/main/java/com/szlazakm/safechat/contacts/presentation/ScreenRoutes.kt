@@ -7,6 +7,6 @@ enum class ScreenRoutes(val route: String) {
     SignInPin("pin"),
     VerifyPin("verify_pin"),
     ContactList("contact_list"),
-    Chat("chat/{contactId}"),
+    Chat("chat/{phoneNumber}"),
     AddContact("add_contact")
 }

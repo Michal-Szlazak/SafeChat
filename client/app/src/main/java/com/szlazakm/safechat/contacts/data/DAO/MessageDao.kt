@@ -7,13 +7,16 @@ import androidx.room.Query;
 
 import com.szlazakm.safechat.contacts.data.Entities.MessageEntity;
 
-import java.util.List;
+import java.util.UUID
 
 @Dao
 interface MessageDao {
 
-    @Query("SELECT * FROM message_entity ORDER BY timestamp DESC")
-    fun getMessages(): List<MessageEntity>
+    @Query("SELECT * FROM message_entity" +
+            " WHERE senderPhoneNumber=:senderPhoneNumber" +
+            " AND receiverPhoneNumber=:receiverPhoneNumber" +
+            " ORDER BY timestamp DESC")
+    fun getMessages(senderPhoneNumber: String, receiverPhoneNumber: String): List<MessageEntity>
 
     @Insert
     fun insertMessage(contact: MessageEntity)

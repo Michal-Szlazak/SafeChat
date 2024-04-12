@@ -6,7 +6,6 @@ import java.util.Date
 import java.util.UUID
 
 data class Contact(
-    val id: UUID,
     val firstName: String,
     val lastName: String,
     val email: String,
@@ -16,7 +15,6 @@ data class Contact(
 
 fun Contact.toContactEntity(): ContactEntity {
     return ContactEntity(
-        id = this.id,
         firstName = this.firstName,
         lastName = this.lastName,
         phoneNumber = this.phoneNumber,

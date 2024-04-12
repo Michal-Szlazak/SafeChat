@@ -79,40 +79,12 @@ fun ContactListScreen(
                         .clickable {
                             viewModel.onEvent(ContactListEvent.OnConversationClick(contact))
                             navController.navigate(
-                                ScreenRoutes.Chat.route.replace("{contactId}", contact.id.toString())
+                                ScreenRoutes.Chat.route.replace("{phoneNumber}", contact.phoneNumber)
                             )
                         }
                         .padding(horizontal = 16.dp)
                 )
             }
         }
-    }
-}
-
-@Preview(name = "My Composable Preview")
-@Composable
-fun ContactListScreenPreview() {
-    val fakeState = ContactListState(contacts = listOf(
-        Contact(
-            id = UUID.randomUUID(),
-            firstName = "John",
-            lastName = "Doe",
-            phoneNumber = "1234567890",
-            email = "john@example.com",
-            photo = null
-        ),
-        Contact(
-            id = UUID.randomUUID(),
-            firstName = "Jane",
-            lastName = "Doe",
-            phoneNumber = "0987654321",
-            email = "jane@example.com",
-            photo = null
-        )
-    ))
-
-    val onEvent: (ContactListEvent) -> Unit = { event ->
-        // Do nothing or print the event for testing purposes
-        println("Received event: $event")
     }
 }

@@ -18,6 +18,12 @@ class ContactRepository @Inject constructor(context: Context) {
         .build()
 
     // Function to insert hardcoded contacts into the database
+
+    fun clearContacts() {
+        val contactDao = database.contactDao()
+        contactDao.deleteAllContacts()
+    }
+
     fun insertHardcodedContacts() {
         // Create an instance of the DAO
         val contactDao = database.contactDao()
@@ -26,7 +32,6 @@ class ContactRepository @Inject constructor(context: Context) {
         // Insert hardcoded contacts
         val contacts = listOf(
             ContactEntity(
-                id = UUID.fromString("389ea0de-0758-4636-9ef0-6a38d1a12162"),
                 firstName = "John",
                 lastName = "Doe",
                 phoneNumber = "1234567890",
@@ -35,7 +40,6 @@ class ContactRepository @Inject constructor(context: Context) {
                 photo = "/path/to/image.jpg"
             ),
             ContactEntity(
-                id = UUID.fromString("389ea0de-0758-4636-9ef0-6a38d1a12163"),
                 firstName = "Jane",
                 lastName = "Doe",
                 phoneNumber = "0987654321",
@@ -64,15 +68,15 @@ class ContactRepository @Inject constructor(context: Context) {
         database.contactDao().deleteAllContacts()
     }
 
-    fun getContact(userId: UUID) : Contact?{
-        return database.contactDao().getContact(userId)?.toContact()
+    fun getContact(phoneNumber: String) : Contact?{
+        return database.contactDao().getContact(phoneNumber)?.toContact()
     }
 
     fun createContact(contact: Contact) {
         database.contactDao().insertContact(contact.toContactEntity())
     }
 
-    fun contactExists(id: UUID) : Boolean {
-        return database.contactDao().getContact(id) != null
+    fun contactExists(phoneNumber: String) : Boolean {
+        return database.contactDao().getContact(phoneNumber) != null
     }
 }

@@ -6,10 +6,13 @@ import androidx.compose.runtime.Composable
 import com.szlazakm.safechat.contacts.domain.Message
 
 @Composable
-fun MessageList(messages: List<Message.TextMessage>) {
+fun MessageList(
+    viewModel: ChatViewModel,
+    messages: List<Message.TextMessage>
+) {
     LazyColumn {
         items(messages) { message ->
-            MessageListItem(message = message)
+            MessageListItem(viewModel = viewModel, message = message)
         }
     }
 }

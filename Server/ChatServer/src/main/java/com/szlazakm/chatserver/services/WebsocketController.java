@@ -3,32 +3,29 @@ package com.szlazakm.chatserver.services;
 import com.szlazakm.chatserver.dtos.MessageDTO;
 import com.szlazakm.chatserver.dtos.OutputMessageDTO;
 import lombok.RequiredArgsConstructor;
-import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.stereotype.Service;
-
-import java.security.Principal;
+import org.springframework.web.bind.annotation.RestController;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-@Service
+@RestController
 @RequiredArgsConstructor
-public class WebsocketService {
+public class WebsocketController {
 
     private final SimpMessagingTemplate simpMessagingTemplate;
 
     @MessageMapping("/room")
-    public void sendSpecific(
-            @Payload MessageDTO msg) throws Exception {
-        System.out.println("Got message: " + msg.getText());
-//        System.out.println(user.getName());
+    public void sendSpecific(@Payload MessageDTO msg){
+
         OutputMessageDTO out = new OutputMessageDTO(
                 msg.getFrom(),
+                msg.getTo(),
                 msg.getText(),
-                new SimpleDateFormat("HH:mm").format(new Date()));
-        simpMessagingTemplate.convertAndSendToUser(
-                msg.getTo(), "/user/queue/specific-user", out);
+                new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())
+        );
+        simpMessagingTemplate.convertAndSend(
+                "/user/queue/" + msg.getTo(), out);
     }
 }

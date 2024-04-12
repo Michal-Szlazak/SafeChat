@@ -8,10 +8,9 @@ import java.util.UUID
 @Entity(tableName = "contact_entity")
 data class ContactEntity(
     @PrimaryKey(autoGenerate = false)
-    val id: UUID,
+    val phoneNumber: String,
     val firstName: String,
     val lastName: String,
-    val phoneNumber: String,
     val email: String,
     val createdAt: Long,
     val photo: String?
@@ -19,7 +18,6 @@ data class ContactEntity(
 
 fun ContactEntity.toContact(): Contact {
     return Contact(
-        id = this.id,
         firstName = this.firstName,
         lastName = this.lastName,
         phoneNumber = this.phoneNumber,

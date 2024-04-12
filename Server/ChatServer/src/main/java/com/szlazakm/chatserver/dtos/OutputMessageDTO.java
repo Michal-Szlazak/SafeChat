@@ -7,11 +7,12 @@ import lombok.Value;
 @Value
 public class OutputMessageDTO extends MessageDTO {
 
-    String time;
+    String date;
 
-    public OutputMessageDTO(final String from, final String text, final String time) {
+    public OutputMessageDTO(final String from, final String to, final String text, final String date) {
         this.setFrom(from);
+        this.setTo(to);
         this.setText(text);
-        this.time = time;
+        this.date = date;
     }
 }

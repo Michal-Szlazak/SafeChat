@@ -27,7 +27,6 @@ class MessageRepository @Inject constructor(context: Context) {
         messageDao.deleteAllMessages()
 
         val user1 = ContactEntity(
-            id = UUID.fromString("389ea0de-0758-4636-9ef0-6a38d1a12162"),
             firstName = "John",
             lastName = "Doe",
             phoneNumber = "1234567890",
@@ -36,7 +35,6 @@ class MessageRepository @Inject constructor(context: Context) {
             photo = "/path/to/image.jpg"
         )
         val user2 = ContactEntity(
-            id = UUID.fromString("389ea0de-0758-4636-9ef0-6a38d1a12163"),
             firstName = "Jane",
             lastName = "Doe",
             phoneNumber = "0987654321",
@@ -49,14 +47,14 @@ class MessageRepository @Inject constructor(context: Context) {
         val messages = listOf(
             MessageEntity(
                 content = "hello to you",
-                senderId = user1.id,
-                receiverId = user2.id,
+                senderPhoneNumber = user1.phoneNumber,
+                receiverPhoneNumber = user2.phoneNumber,
                 timestamp = Date()
             ),
             MessageEntity(
                 content = "hello to you too",
-                senderId = user2.id,
-                receiverId = user1.id,
+                senderPhoneNumber = user2.phoneNumber,
+                receiverPhoneNumber = user1.phoneNumber,
                 timestamp = Date()
             )
             // Add more contacts as needed
@@ -68,8 +66,11 @@ class MessageRepository @Inject constructor(context: Context) {
         }
     }
 
-    fun getMessages(): List<Message.TextMessage> {
-        return database.messageDao().getMessages().map { messageEntity -> messageEntity.toTextMessage() }
+    fun getMessages(senderPhoneNumber: String, receiverPhoneNumber: String): List<Message.TextMessage> {
+        return database.messageDao().getMessages(
+            senderPhoneNumber,
+            receiverPhoneNumber
+        ).map { messageEntity -> messageEntity.toTextMessage() }
     }
 
     fun getRecentContacts(): List<Contact> {

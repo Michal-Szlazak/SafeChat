@@ -21,8 +21,8 @@ interface ContactDao {
     @Delete
     fun deleteContact(contact: ContactEntity)
 
-    @Query("SELECT * FROM contact_entity WHERE id = :id")
-    fun getContact(id: UUID): ContactEntity?
+    @Query("SELECT * FROM contact_entity WHERE phoneNumber = :phoneNumber")
+    fun getContact(phoneNumber: String): ContactEntity?
 
     @Query("DELETE FROM contact_entity")
     fun deleteAllContacts()

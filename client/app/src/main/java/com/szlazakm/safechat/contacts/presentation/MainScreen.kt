@@ -20,6 +20,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.szlazakm.safechat.contacts.data.Repositories.UserRepository
 import com.szlazakm.safechat.contacts.domain.Contact
 import com.szlazakm.safechat.contacts.presentation.components.addContact.AddContactScreen
 import com.szlazakm.safechat.contacts.presentation.components.addContact.AddContactViewModel
@@ -33,6 +34,7 @@ import com.szlazakm.safechat.contacts.presentation.components.chat.ChatScreen
 import com.szlazakm.safechat.contacts.presentation.components.chat.ChatViewModel
 import com.szlazakm.safechat.contacts.presentation.components.contactList.ContactListScreen
 import com.szlazakm.safechat.contacts.presentation.components.contactList.ContactListViewModel
+import com.szlazakm.safechat.webclient.services.MessageSaverService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.UUID
@@ -43,10 +45,12 @@ fun SafeChatApp(
     navController: NavHostController = rememberNavController(),
     contactListViewModel: ContactListViewModel = viewModel(),
     chatViewModel: ChatViewModel = viewModel(),
-    addContactViewModel: AddContactViewModel = viewModel()
+    addContactViewModel: AddContactViewModel = viewModel(),
 ) {
 
-    signInViewModel.deleteUser()
+//    signInViewModel.deleteUser()
+//    contactListViewModel.clearContacts()
+
     val userExists by signInViewModel.isUserCreated().collectAsState(initial = false)
     val startDestination = if (userExists) {
         ScreenRoutes.ContactList.route
@@ -72,7 +76,7 @@ fun SafeChatApp(
                     viewModel = signInViewModel,
                     onSignInClick = { phoneExtension: String, phoneNumber: String ->
 
-                        val wholePhoneNumber = "$phoneExtension $phoneNumber"
+                        val wholePhoneNumber = phoneNumber
                         signInViewModel.setPhoneNumber(wholePhoneNumber)
                         navController.navigate(ScreenRoutes.VerifyPhoneNumber.route)
                     }
@@ -141,6 +145,8 @@ fun SafeChatApp(
                 )
             }
             composable(ScreenRoutes.ContactList.route) {
+//                val messageSaverService = MessageSaverService()
+//                messageSaverService.connectToUserQueue("") //TODO get the number
                 ContactListScreen(navController = navController, viewModel = contactListViewModel)
             }
             composable(
@@ -155,23 +161,25 @@ fun SafeChatApp(
             composable(
                 route = ScreenRoutes.Chat.route,
                 arguments = listOf(
-                    navArgument("contactId") { type = NavType.StringType }
+                    navArgument("phoneNumber") { type = NavType.StringType }
                 )
             ) { backStackEntry ->
-                val contactId = backStackEntry.arguments?.getString("contactId")
-                val uuid = UUID.fromString(contactId)
-                var contact by remember { mutableStateOf<Contact?>(null) }
-
-                LaunchedEffect(uuid) {
-                    contactId?.let { _ ->
+                val contactPhoneNumber = backStackEntry.arguments?.getString("phoneNumber")
+                println(contactPhoneNumber)
+                LaunchedEffect(contactPhoneNumber) {
+                    contactPhoneNumber?.let {
                         val fetchedContact = withContext(Dispatchers.IO) {
-                            chatViewModel.getContact(uuid)
+                            chatViewModel.getContact(contactPhoneNumber)
                         }
-                        contact = fetchedContact
+                        println("Fetched contact: $fetchedContact")
+                        chatViewModel.setContact(fetchedContact!!)
                     }
                 }
 
-                contact?.let { ChatScreen(navController = navController, viewModel = chatViewModel, contact = it) }
+                val currentContact = chatViewModel.contact.value
+                println(currentContact)
+                currentContact?.let { chatViewModel.loadChat() }
+                currentContact?.let { ChatScreen(navController = navController, viewModel = chatViewModel, contact = it) }
             }
         }
     }

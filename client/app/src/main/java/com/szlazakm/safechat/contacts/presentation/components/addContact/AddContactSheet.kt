@@ -94,8 +94,8 @@ fun AddContactScreen(
 
                         navController.navigate(
                             ScreenRoutes.Chat.route.replace(
-                                "{contactId}",
-                                state.userDTO.userId.toString()
+                                "{phoneNumber}",
+                                state.userDTO.phoneNumber
                             )
                         )
                     }

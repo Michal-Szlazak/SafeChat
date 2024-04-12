@@ -10,8 +10,6 @@ import java.util.UUID;
 @Builder
 @Jacksonized
 public class UserDTO {
-
-    UUID userId;
     String firstName;
     String lastName;
     String phoneNumber;

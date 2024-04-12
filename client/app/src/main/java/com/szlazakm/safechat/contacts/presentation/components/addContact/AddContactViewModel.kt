@@ -67,7 +67,6 @@ class AddContactViewModel @Inject constructor(
     fun createContactIfNotExists(userDTO: UserDTO) {
 
         val contact = Contact(
-            id = userDTO.userId,
             firstName = userDTO.firstName,
             lastName = userDTO.lastName,
             phoneNumber = userDTO.phoneNumber,
@@ -76,7 +75,7 @@ class AddContactViewModel @Inject constructor(
         )
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                if(!repository.contactExists(contact.id)) {
+                if(!repository.contactExists(contact.phoneNumber)) {
                     repository.createContact(contact)
                 }
             }

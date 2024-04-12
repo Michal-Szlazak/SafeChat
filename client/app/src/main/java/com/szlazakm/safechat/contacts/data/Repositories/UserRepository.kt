@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.szlazakm.safechat.AppDatabase
 import com.szlazakm.safechat.contacts.data.Entities.UserEntity
+import com.szlazakm.safechat.webclient.dtos.UserDTO
 import javax.inject.Inject
 
 class UserRepository @Inject constructor(context: Context) {
@@ -26,5 +27,9 @@ class UserRepository @Inject constructor(context: Context) {
     fun clearUserDB() {
 
         database.userDao().clearUserDB()
+    }
+
+    fun getLocalUser() : UserEntity {
+        return database.userDao().getUser()!!
     }
 }
