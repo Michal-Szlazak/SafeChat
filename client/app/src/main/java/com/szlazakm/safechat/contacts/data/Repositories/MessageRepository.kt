@@ -82,4 +82,8 @@ class MessageRepository @Inject constructor(context: Context) {
         database.contactDao().deleteAllContacts()
     }
 
+    fun addMessage(message: MessageEntity) {
+        database.messageDao().insertMessage(message)
+    }
+
 }

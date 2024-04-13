@@ -49,8 +49,8 @@ class ChatViewModel @Inject constructor(
     private val _contact = MutableLiveData<Contact>()
     val contact: LiveData<Contact> = _contact
 
-    private val _localUserEntity = MutableLiveData<UserEntity>()
-    val localUserEntity: LiveData<UserEntity> = _localUserEntity
+    private val _localUserEntity = MutableLiveData<UserEntity?>()
+    val localUserEntity: MutableLiveData<UserEntity?> = _localUserEntity
 
     fun setContact(contact: Contact) {
         _contact.value = contact
@@ -66,6 +66,14 @@ class ChatViewModel @Inject constructor(
 
             val localUserEntity = withContext(Dispatchers.IO) {
                 userRepository.getLocalUser()
+            }
+
+            if(localUserEntity == null) {
+                Log.e(
+                    "ChatViewModel",
+                    "Failed to load chat, local user not present."
+                )
+                return@launch
             }
 
             _localUserEntity.value = localUserEntity
@@ -139,6 +147,14 @@ class ChatViewModel @Inject constructor(
 
                     val localUser = withContext(Dispatchers.IO) {
                         userRepository.getLocalUser()
+                    }
+
+                    if(localUser == null) {
+                        Log.e(
+                            "ChatViewModel",
+                            "Failed to load chat, local user not present."
+                        )
+                        return@launch
                     }
 
                     val messageDTO = MessageDTO(

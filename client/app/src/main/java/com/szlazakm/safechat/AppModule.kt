@@ -5,6 +5,8 @@ import android.content.Context
 import androidx.room.Room
 import com.szlazakm.safechat.contacts.data.Repositories.ContactRepository
 import com.szlazakm.safechat.contacts.data.Repositories.MessageRepository
+import com.szlazakm.safechat.contacts.data.Repositories.UserRepository
+import com.szlazakm.safechat.webclient.services.MessageSaverService
 import com.szlazakm.safechat.webclient.services.UserService
 import dagger.Module
 import dagger.Provides
@@ -47,5 +49,17 @@ class AppModule {
             .baseUrl("http://192.168.0.230:8080")
             .addConverterFactory(JacksonConverterFactory.create())
             .build()
+    }
+
+    @Provides
+    fun provideMessageSaverService(
+        userService: UserService,
+        contactRepository: ContactRepository,
+        messageRepository: MessageRepository,
+        userRepository: UserRepository
+    ): MessageSaverService {
+        return MessageSaverService(
+            userService, contactRepository,
+            messageRepository, userRepository)
     }
 }

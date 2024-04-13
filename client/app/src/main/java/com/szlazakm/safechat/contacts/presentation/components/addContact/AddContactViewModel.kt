@@ -36,14 +36,11 @@ class AddContactViewModel @Inject constructor(
 
     fun findUserByPhone(phoneNumber: String) {
 
-        println("Looking for user...")
-
         viewModelScope.launch {
             val userDto = findUserByPhoneAsync(phoneNumber)
             _state.value = _state.value.copy(
                 userDTO = userDto
             )
-            println("User found $userDto")
         }
     }
 

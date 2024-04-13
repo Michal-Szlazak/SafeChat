@@ -38,6 +38,7 @@ import com.szlazakm.safechat.webclient.services.MessageSaverService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.UUID
+import javax.inject.Inject
 
 @Composable
 fun SafeChatApp(
@@ -46,10 +47,12 @@ fun SafeChatApp(
     contactListViewModel: ContactListViewModel = viewModel(),
     chatViewModel: ChatViewModel = viewModel(),
     addContactViewModel: AddContactViewModel = viewModel(),
+    messageSaverService: MessageSaverService
 ) {
 
 //    signInViewModel.deleteUser()
 //    contactListViewModel.clearContacts()
+    messageSaverService.connectToUserQueue()
 
     val userExists by signInViewModel.isUserCreated().collectAsState(initial = false)
     val startDestination = if (userExists) {

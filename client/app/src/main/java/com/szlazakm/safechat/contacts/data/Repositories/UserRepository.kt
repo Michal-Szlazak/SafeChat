@@ -29,7 +29,7 @@ class UserRepository @Inject constructor(context: Context) {
         database.userDao().clearUserDB()
     }
 
-    fun getLocalUser() : UserEntity {
-        return database.userDao().getUser()!!
+    fun getLocalUser() : UserEntity? {
+        return database.userDao().getUser()
     }
 }
