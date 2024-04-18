@@ -1,16 +1,14 @@
 package com.szlazakm.safechat.webclient.services
 
-import com.google.gson.Gson
-import com.szlazakm.safechat.webclient.dtos.MessageDTO
-import com.szlazakm.safechat.webclient.dtos.OutputMessageDTO
+import android.util.Log
 import io.reactivex.disposables.Disposable
 import ua.naiksoftware.stomp.Stomp
 import ua.naiksoftware.stomp.StompClient
 
-class StompService(private val serverUrl: String) {
+class StompService() {
 
     private var stompClient: StompClient? = null
-    private val gson = Gson()
+    private val serverUrl = "ws://192.168.0.230:8080/ws"
 
     fun connect() {
         try {
@@ -27,17 +25,11 @@ class StompService(private val serverUrl: String) {
     }
 
     fun subscribeToTopic(topic: String, callback: (String) -> Unit) : Disposable? {
+        Log.d("StompService", "Subscribed to topic")
         val result = stompClient?.topic(topic)?.subscribe { specificUserMessage ->
             val payload = specificUserMessage.payload
-            println("called subscire callback")
             callback(payload)
         }
         return result
-    }
-
-    fun sendMessage(destination: String, message: MessageDTO) {
-        val gsonString = gson.toJson(message)
-        println("Sending message $gsonString")
-        stompClient?.send("/app/room", gsonString)?.subscribe()
     }
 }

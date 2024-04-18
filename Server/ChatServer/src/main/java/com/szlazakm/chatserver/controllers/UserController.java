@@ -29,6 +29,7 @@ public class UserController {
 
     @GetMapping
     public UserDTO getUser(@RequestParam String phoneNumber) {
+
         return userService.getUserByPhoneNumber(phoneNumber);
     }
 

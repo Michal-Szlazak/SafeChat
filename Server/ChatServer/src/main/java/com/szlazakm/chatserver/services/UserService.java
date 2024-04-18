@@ -63,8 +63,9 @@ public class UserService {
 
     public UserDTO getUserByPhoneNumber(String phoneNumber) {
 
-        Optional<User> optUser = userRepository.getUserByPhoneNumber(phoneNumber);
+        Optional<User> optUser = userRepository.findByPhoneNumber(phoneNumber);
         User user = optUser.orElseThrow(UserNotFoundException::new);
+        System.out.println(optUser);
         return UserDTO.builder()
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
