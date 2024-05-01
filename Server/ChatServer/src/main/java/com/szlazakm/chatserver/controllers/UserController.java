@@ -23,7 +23,7 @@ public class UserController {
 
     @PostMapping("/spk")
     @ResponseStatus(HttpStatus.CREATED)
-    public void addSpk(SPKCreateDTO spkCreateDTO) throws SignatureException {
+    public void addSpk(@RequestBody SPKCreateDTO spkCreateDTO) throws SignatureException {
         userService.createSPK(spkCreateDTO);
     }
 
@@ -34,8 +34,8 @@ public class UserController {
     }
 
     @GetMapping("/keyBundle")
-    public KeyBundleDTO getKeyBundle(@RequestBody KeyBundleGetDTO keyBundleGetDTO) {
-        return userService.getKeyBundle(keyBundleGetDTO);
+    public KeyBundleDTO getKeyBundle(@RequestParam String phoneNumber) {
+        return userService.getKeyBundle(phoneNumber);
     }
 
     @PostMapping("/verify")

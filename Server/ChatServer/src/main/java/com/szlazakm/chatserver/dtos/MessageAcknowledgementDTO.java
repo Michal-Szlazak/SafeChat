@@ -9,7 +9,7 @@ import java.util.UUID;
 @Value
 @Builder
 @Jacksonized
-public class KeyBundleGetDTO {
+public class MessageAcknowledgementDTO {
 
-    String phoneNumber;
+    UUID messageId;
 }

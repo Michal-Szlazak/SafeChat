@@ -3,6 +3,7 @@ package com.szlazakm.chatserver.dtos;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.jackson.Jacksonized;
+import org.whispersystems.libsignal.IdentityKey;
 
 @Value
 @Builder
@@ -12,6 +13,6 @@ public class UserCreateDTO {
     String firstName;
     String lastName;
     String phoneNumber;
-    String identityKey;
+    byte[] identityKey;
     String pin;
 }

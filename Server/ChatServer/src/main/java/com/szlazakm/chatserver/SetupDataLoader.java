@@ -50,7 +50,7 @@ public class SetupDataLoader implements
         User user = new User();
         user.setFirstName("admin");
         user.setLastName("admin");
-        user.setIdentityKey("idKey");
+        user.setIdentityKey("idKey".getBytes());
         user.setPhoneNumber("123123123");
         user.setRoles(Arrays.asList(adminRole));
         user.setVerified(true);

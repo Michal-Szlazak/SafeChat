@@ -3,8 +3,11 @@ package com.szlazakm.chatserver.services;
 import com.szlazakm.chatserver.auth.SignatureVerifier;
 import com.szlazakm.chatserver.dtos.*;
 import com.szlazakm.chatserver.entities.OPK;
+import com.szlazakm.chatserver.entities.SPK;
 import com.szlazakm.chatserver.entities.User;
+import com.szlazakm.chatserver.exceptionHandling.exceptions.SPKNotFoundException;
 import com.szlazakm.chatserver.exceptionHandling.exceptions.UserNotFoundException;
+import com.szlazakm.chatserver.repositories.SPKRepository;
 import com.szlazakm.chatserver.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -20,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final SignatureVerifier signatureVerifier;
+    private final SPKRepository spkRepository;
     private final BCryptPasswordEncoder passwordEncoder;
 
     public void createUser(UserCreateDTO userCreateDTO) {
@@ -40,22 +43,33 @@ public class UserService {
 
     public void createSPK(SPKCreateDTO spkCreateDTO) throws SignatureException {
 
-        Optional<User> optionalUser = userRepository.findById(spkCreateDTO.getUserId());
+        Optional<User> optUser = userRepository.findByPhoneNumber(spkCreateDTO.getPhoneNumber());
+        User user = optUser.orElseThrow(UserNotFoundException::new);
+        Optional<SPK> optSpk = spkRepository.findByUserPhoneNumber(spkCreateDTO.getPhoneNumber());
 
-        User user = optionalUser.orElseThrow(UserNotFoundException::new);
+        SPK spk;
 
-        String signedPreKey = spkCreateDTO.getSignedPreKey();
-        String signature = spkCreateDTO.getSignature();
+        if(optSpk.isEmpty()) {
+            spk = SPK.builder()
+                    .keyId(spkCreateDTO.getId())
+                    .signedPreKey(spkCreateDTO.getSignedPreKey())
+                    .signature(spkCreateDTO.getSignature())
+                    .timestamp(spkCreateDTO.getTimestamp())
+                    .user(user)
+                    .build();
+        } else {
 
-        boolean isSignatureVerified = signatureVerifier.verify(
-                signedPreKey,
-                signature,
-                user.getIdentityKey()
-        );
+            spk = optSpk.get();
+            spk.setKeyId(spkCreateDTO.getId());
+            spk.setSignedPreKey(spkCreateDTO.getSignedPreKey());
+            spk.setSignature(spkCreateDTO.getSignature());
+            spk.setTimestamp(spkCreateDTO.getTimestamp());
+        }
+
+        boolean isSignatureVerified = true; //TODO Verify the signature
 
         if(isSignatureVerified) {
-            user.setSignedPreKey(signedPreKey);
-            user.setSignature(signature);
+            spkRepository.save(spk);
         } else {
             throw new SignatureException("Signature verification returned false.");
         }
@@ -65,7 +79,7 @@ public class UserService {
 
         Optional<User> optUser = userRepository.findByPhoneNumber(phoneNumber);
         User user = optUser.orElseThrow(UserNotFoundException::new);
-        System.out.println(optUser);
+
         return UserDTO.builder()
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
@@ -73,24 +87,30 @@ public class UserService {
                 .build();
     }
 
-    public KeyBundleDTO getKeyBundle(KeyBundleGetDTO keyBundleGetDTO) {
+    public KeyBundleDTO getKeyBundle(String phoneNumber) {
 
-        Optional<User> optUser = userRepository.findById(keyBundleGetDTO.getUserId());
+        Optional<User> optUser = userRepository.findByPhoneNumber(phoneNumber);
+        Optional<SPK> optSpk = spkRepository.findByUserPhoneNumber(phoneNumber);
         User user = optUser.orElseThrow(UserNotFoundException::new);
+        SPK spk = optSpk.orElseThrow(SPKNotFoundException::new);
         List<OPK> opkList = user.getOPKS();
 
-        String opk = "";
+        OPK opk = null;
 
         if(!opkList.isEmpty()) {
-            opk = opkList.get(0).onetimePreKey;
+            opk = opkList.get(0);
             opkList.remove(0);
         }
 
+        userRepository.save(user);
+
         return KeyBundleDTO.builder()
                 .identityKey(user.getIdentityKey())
-                .signedPreKey(user.getSignedPreKey())
-                .signature(user.getSignature())
-                .onetimePreKey(opk)
+                .signedPreKeyId(spk.getKeyId())
+                .signedPreKey(spk.getSignedPreKey())
+                .signature(spk.getSignature())
+                .onetimePreKeyId(opk.keyId)
+                .onetimePreKey(opk.preKey)
                 .build();
     }
 

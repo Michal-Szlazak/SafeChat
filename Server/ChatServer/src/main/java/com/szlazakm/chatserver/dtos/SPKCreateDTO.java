@@ -12,7 +12,9 @@ import java.util.UUID;
 @Jacksonized
 public class SPKCreateDTO {
 
-    UUID userId;
-    String signedPreKey;
-    String signature;
+    String phoneNumber;
+    int id;
+    byte[] signedPreKey;
+    byte[] signature;
+    Long timestamp;
 }

@@ -1,9 +1,6 @@
 package com.szlazakm.chatserver.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,14 +13,17 @@ import java.util.UUID;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class OPK {
+public class SPK {
 
     @Id
     @GeneratedValue
-    public int databaseId;
-    public int keyId;
-    public byte[] preKey;
+    private UUID databaseId;
+    private int keyId;
+    private byte[] signedPreKey;
+    private byte[] signature;
+    private Long timestamp;
 
-    @ManyToOne
+    @OneToOne
+    @JoinColumn(name = "phone_number", referencedColumnName = "phone_number")
     private User user;
 }
