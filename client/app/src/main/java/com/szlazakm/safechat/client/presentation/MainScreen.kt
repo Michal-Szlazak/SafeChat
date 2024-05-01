@@ -1,5 +1,6 @@
 package com.szlazakm.safechat.client.presentation
 
+import android.content.Intent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -8,6 +9,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -15,6 +17,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.szlazakm.safechat.client.data.services.MessageSaverService
 import com.szlazakm.safechat.client.presentation.components.addContact.AddContactScreen
 import com.szlazakm.safechat.client.presentation.components.addContact.AddContactViewModel
 import com.szlazakm.safechat.client.presentation.components.auth.PinScreen
@@ -39,9 +42,6 @@ fun SafeChatApp(
     addContactViewModel: AddContactViewModel = viewModel()
 ) {
 
-//    signInViewModel.deleteUser()
-//    contactListViewModel.clearContacts()
-
     val userExists by signInViewModel.isUserCreated().collectAsState(initial = false)
     val startDestination = if (userExists) {
         ScreenRoutes.ContactList.route
@@ -63,7 +63,7 @@ fun SafeChatApp(
                 SignInScreen(
                     viewModel = signInViewModel,
                     onSignInClick = { phoneExtension: String, phoneNumber: String ->
-
+                        // TODO add phone extension to the phone number
                         signInViewModel.setPhoneNumber(phoneNumber)
                         navController.navigate(ScreenRoutes.VerifyPhoneNumber.route)
                     }
@@ -80,7 +80,9 @@ fun SafeChatApp(
                         //TODO(verify the code)
                         if(it) {
                             signInViewModel.saveUser()
+
                             contactListViewModel.loadMessageSaverService()
+
                             navController.navigate(ScreenRoutes.ContactList.route)
                         } else {
                             navController.navigate(ScreenRoutes.SignIn.route)

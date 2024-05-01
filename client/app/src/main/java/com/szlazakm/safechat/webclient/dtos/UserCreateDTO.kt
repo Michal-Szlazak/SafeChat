@@ -10,7 +10,7 @@ data class UserCreateDTO(
     @JsonProperty("phoneNumber")
     val phoneNumber: String,
     @JsonProperty("identityKey")
-    val identityKey: String,
+    val identityKey: ByteArray,
     @JsonProperty("pin")
     val pin: String
 )

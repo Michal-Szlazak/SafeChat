@@ -1,4 +1,4 @@
-package com.szlazakm.safechat.webclient.services
+package com.szlazakm.safechat.client.data.services
 
 import android.util.Log
 import io.reactivex.disposables.Disposable

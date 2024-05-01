@@ -6,7 +6,7 @@ import com.szlazakm.safechat.client.data.Repositories.ContactRepository
 import com.szlazakm.safechat.client.domain.Contact
 import com.szlazakm.safechat.client.presentation.States.AddContactState
 import com.szlazakm.safechat.webclient.dtos.UserDTO
-import com.szlazakm.safechat.webclient.services.UserService
+import com.szlazakm.safechat.webclient.webservices.UserWebService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,7 +23,7 @@ class AddContactViewModel @Inject constructor(
     private val retrofit: Retrofit
 ): ViewModel() {
 
-    private val userService: UserService = retrofit.create(UserService::class.java)
+    private val userWebService: UserWebService = retrofit.create(UserWebService::class.java)
     private val _state: MutableStateFlow<AddContactState> = MutableStateFlow(AddContactState(userDTO = null))
     val state: StateFlow<AddContactState> = _state
 
@@ -41,7 +41,7 @@ class AddContactViewModel @Inject constructor(
         return withContext(Dispatchers.IO) {
 
             try {
-                val response: Response<UserDTO> = userService.findUserByPhoneNumber(phoneNumber).execute()
+                val response: Response<UserDTO> = userWebService.findUserByPhoneNumber(phoneNumber).execute()
                 if (response.isSuccessful) {
                     response.body()
                 } else {

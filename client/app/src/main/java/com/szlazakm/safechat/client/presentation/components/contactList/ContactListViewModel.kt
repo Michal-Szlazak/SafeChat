@@ -1,17 +1,17 @@
 package com.szlazakm.safechat.client.presentation.components.contactList
 
+import android.content.Context
+import android.content.Intent
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.szlazakm.safechat.client.data.Repositories.ContactRepository
-import com.szlazakm.safechat.client.data.Repositories.MessageRepository
-import com.szlazakm.safechat.client.data.Repositories.UserRepository
+import com.szlazakm.safechat.client.data.services.MessageSaverService
 import com.szlazakm.safechat.client.domain.Contact
 import com.szlazakm.safechat.client.presentation.Events.ContactListEvent
 import com.szlazakm.safechat.client.presentation.States.ContactListState
-import com.szlazakm.safechat.webclient.services.MessageSaverService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,28 +19,16 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import retrofit2.Retrofit
 import javax.inject.Inject
 
 @HiltViewModel
 class ContactListViewModel @Inject constructor(
     private val contactRepository: ContactRepository,
-    private val messageRepository: MessageRepository,
-    private val userRepository: UserRepository,
-    private val retrofit: Retrofit
+    private val context: Context // TODO almost certainly should be removed
 ): ViewModel() {
 
     private val _state = MutableStateFlow(ContactListState())
     val state: StateFlow<ContactListState> = _state
-
-    fun clearContacts() {
-        viewModelScope.launch {
-
-            withContext(Dispatchers.IO) {
-                contactRepository.clearContacts()
-            }
-        }
-    }
 
     fun loadContactList() {
         viewModelScope.launch {
@@ -57,21 +45,8 @@ class ContactListViewModel @Inject constructor(
     }
 
     fun loadMessageSaverService() {
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                val messageSaverService = MessageSaverService(
-                    contactRepository,
-                    messageRepository,
-                    userRepository,
-                    retrofit
-                )
-                messageSaverService.connectToUserQueue()
-            }
-        }
-    }
-
-    init {
-        loadMessageSaverService()
+        val intent = Intent(context, MessageSaverService::class.java)
+        context.startService(intent)
     }
 
     var newContact: Contact? by mutableStateOf(null)

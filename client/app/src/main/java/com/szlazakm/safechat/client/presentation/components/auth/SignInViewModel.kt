@@ -1,5 +1,6 @@
 package com.szlazakm.safechat.client.presentation.components.auth
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.szlazakm.safechat.client.data.Entities.UserEntity
@@ -7,10 +8,10 @@ import com.szlazakm.safechat.client.data.Repositories.ContactRepository
 import com.szlazakm.safechat.client.data.Repositories.UserRepository
 import com.szlazakm.safechat.client.domain.Contact
 import com.szlazakm.safechat.client.presentation.States.SignInState
-import com.szlazakm.safechat.utils.auth.generateKeyPair
+import com.szlazakm.safechat.utils.auth.PreKeyManager
 import com.szlazakm.safechat.webclient.dtos.UserCreateDTO
 import com.szlazakm.safechat.webclient.dtos.VerifyPhoneNumberDTO
-import com.szlazakm.safechat.webclient.services.UserService
+import com.szlazakm.safechat.webclient.webservices.UserWebService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -34,23 +35,14 @@ import kotlin.coroutines.resumeWithException
 class SignInViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val contactRepository: ContactRepository,
-    private val retrofit: Retrofit
+    private val retrofit: Retrofit,
+    private val preKeyManager: PreKeyManager
 ): ViewModel() {
 
     private val _state: MutableStateFlow<SignInState> = MutableStateFlow(SignInState())
     val state = _state.asStateFlow()
-    private val userService: UserService = retrofit.create(UserService::class.java)
+    private val userWebService: UserWebService = retrofit.create(UserWebService::class.java)
 
-    fun deleteUser() {
-
-        viewModelScope.launch(Dispatchers.IO) {
-            userRepository.clearUserDB()
-        }
-    }
-
-    fun resetState() {
-        _state.update { SignInState() }
-    }
 
     fun isUserCreated(): Flow<Boolean> = flow {
 
@@ -65,7 +57,7 @@ class SignInViewModel @Inject constructor(
 
         // Return a suspended coroutine, allowing it to be seamlessly integrated into a coroutine scope
         return suspendCancellableCoroutine { continuation ->
-            userService.verifyPhoneNumber(verifyPhoneNumberDTO).enqueue(object : Callback<Boolean> {
+            userWebService.verifyPhoneNumber(verifyPhoneNumberDTO).enqueue(object : Callback<Boolean> {
                 override fun onResponse(call: Call<Boolean>, response: Response<Boolean>) {
                     if (response.isSuccessful) {
                         val result = response.body()
@@ -97,20 +89,25 @@ class SignInViewModel @Inject constructor(
 
     fun saveUser() {
 
+        val keyPair = preKeyManager.generateIdentityKeys()
+
+        if(keyPair == null || keyPair.publicKey == null || keyPair.privateKey == null) {
+            Log.e("SignInViewModel", "Failed to generate key pair.")
+            return
+        }
+
         val userCreateDTO = UserCreateDTO(
             firstName = state.value.firstName,
             lastName = state.value.lastName,
             phoneNumber = state.value.phoneNumber,
-            identityKey = generateKeyPair().toString(), //TODO: save the keys to db
+            identityKey = keyPair.publicKey.serialize(),
             pin = state.value.pin
         )
-
-        println(userCreateDTO.toString())
 
         viewModelScope.launch {
             try {
                 val response = withContext(Dispatchers.IO) {
-                    userService.createUser(userCreateDTO).execute()
+                    userWebService.createUser(userCreateDTO).execute()
                 }
                 if (response.isSuccessful) {
                     println("User created successfully. Response code: ${response.code()}")
@@ -120,25 +117,30 @@ class SignInViewModel @Inject constructor(
             } catch (e: Exception) {
                 println("Failed to create user: ${e.message}")
             }
-        }
 
-        val user = UserEntity(
-            phoneNumber = state.value.phoneNumber,
-            firstName = state.value.firstName,
-            lastName = state.value.lastName,
-            createdAt = Date()
-        )
 
-        val localUserContact = Contact(
-            phoneNumber = state.value.phoneNumber,
-            firstName = state.value.firstName,
-            lastName = state.value.lastName,
-            photo = null
-        )
+            val user = UserEntity(
+                phoneNumber = state.value.phoneNumber,
+                firstName = state.value.firstName,
+                lastName = state.value.lastName,
+                createdAt = Date(),
+                identityKeyPair = keyPair.serialize()
+            )
 
-        viewModelScope.launch(Dispatchers.IO) {
-            userRepository.createUser(user)
-            contactRepository.createContact(localUserContact)
+            val localUserContact = Contact(
+                phoneNumber = state.value.phoneNumber,
+                firstName = state.value.firstName,
+                lastName = state.value.lastName,
+                photo = null
+            )
+
+            withContext(Dispatchers.IO) {
+                userRepository.createUser(user)
+                contactRepository.createContact(localUserContact)
+                preKeyManager.setSignedPreKey()
+                preKeyManager.checkAndProvideOPK()
+            }
+
         }
     }
 

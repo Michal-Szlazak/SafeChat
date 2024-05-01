@@ -18,8 +18,8 @@ import com.szlazakm.safechat.client.presentation.States.ChatState
 import com.szlazakm.safechat.webclient.dtos.MessageDTO
 import com.szlazakm.safechat.webclient.dtos.MessageSentResponseDTO
 import com.szlazakm.safechat.webclient.dtos.OutputMessageDTO
-import com.szlazakm.safechat.webclient.services.MessageSenderService
-import com.szlazakm.safechat.webclient.services.StompService
+import com.szlazakm.safechat.webclient.webservices.ChatWebService
+import com.szlazakm.safechat.client.data.services.StompService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -50,7 +50,7 @@ class ChatViewModel @Inject constructor(
     private val _localUserEntity = MutableLiveData<UserEntity?>()
     val localUserEntity: MutableLiveData<UserEntity?> = _localUserEntity
 
-    private val messageSenderService = retrofit.create(MessageSenderService::class.java)
+    private val chatWebService = retrofit.create(ChatWebService::class.java)
 
     fun setContact(contact: Contact) {
         _contact.value = contact
@@ -176,7 +176,7 @@ class ChatViewModel @Inject constructor(
                     withContext(Dispatchers.IO) {
                         try {
 
-                            val response : Response<MessageSentResponseDTO> = messageSenderService.sendMessage(messageDTO).execute()
+                            val response : Response<MessageSentResponseDTO> = chatWebService.sendMessage(messageDTO).execute()
 
                             println(response)
                             if (response.isSuccessful) {

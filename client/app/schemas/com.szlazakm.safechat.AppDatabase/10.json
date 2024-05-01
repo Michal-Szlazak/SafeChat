@@ -1,8 +1,8 @@
 {
   "formatVersion": 1,
   "database": {
-    "version": 7,
-    "identityHash": "13a1805400d9d80b0102eb35239e4077",
+    "version": 10,
+    "identityHash": "91b71087f60a98e472e534596fe7dfce",
     "entities": [
       {
         "tableName": "contact_entity",
@@ -130,7 +130,7 @@
       },
       {
         "tableName": "user_entity",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`phoneNumber` TEXT NOT NULL, `firstName` TEXT NOT NULL, `lastName` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, PRIMARY KEY(`phoneNumber`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`phoneNumber` TEXT NOT NULL, `firstName` TEXT NOT NULL, `lastName` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `identityKeyPair` BLOB NOT NULL, PRIMARY KEY(`phoneNumber`))",
         "fields": [
           {
             "fieldPath": "phoneNumber",
@@ -155,6 +155,12 @@
             "columnName": "createdAt",
             "affinity": "INTEGER",
             "notNull": true
+          },
+          {
+            "fieldPath": "identityKeyPair",
+            "columnName": "identityKeyPair",
+            "affinity": "BLOB",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -168,24 +174,62 @@
       },
       {
         "tableName": "opk_entity",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` BLOB NOT NULL, `privateOPK` TEXT NOT NULL, `publicOPK` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `privateOPK` BLOB NOT NULL, `publicOPK` BLOB NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
             "columnName": "id",
-            "affinity": "BLOB",
+            "affinity": "INTEGER",
             "notNull": true
           },
           {
             "fieldPath": "privateOPK",
             "columnName": "privateOPK",
-            "affinity": "TEXT",
+            "affinity": "BLOB",
             "notNull": true
           },
           {
             "fieldPath": "publicOPK",
             "columnName": "publicOPK",
-            "affinity": "TEXT",
+            "affinity": "BLOB",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "spk_entity",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `publicKey` BLOB NOT NULL, `privateKey` BLOB NOT NULL, `timestamp` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "publicKey",
+            "columnName": "publicKey",
+            "affinity": "BLOB",
+            "notNull": true
+          },
+          {
+            "fieldPath": "privateKey",
+            "columnName": "privateKey",
+            "affinity": "BLOB",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
             "notNull": true
           }
         ],
@@ -202,7 +246,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '13a1805400d9d80b0102eb35239e4077')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '91b71087f60a98e472e534596fe7dfce')"
     ]
   }
 }

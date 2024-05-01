@@ -4,7 +4,11 @@ import android.content.Context
 import androidx.room.Room
 import com.szlazakm.safechat.AppDatabase
 import com.szlazakm.safechat.client.data.Entities.UserEntity
+import org.whispersystems.libsignal.IdentityKeyPair
+import org.whispersystems.libsignal.state.SignedPreKeyRecord
+import org.whispersystems.libsignal.util.KeyHelper
 import javax.inject.Inject
+import kotlin.random.Random
 
 class UserRepository @Inject constructor(context: Context) {
 
