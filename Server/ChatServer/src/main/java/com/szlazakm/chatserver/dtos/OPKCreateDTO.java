@@ -14,5 +14,5 @@ import java.util.UUID;
 public class OPKCreateDTO {
 
     int id;
-    byte[] preKey;
+    String preKey;
 }

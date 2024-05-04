@@ -1,27 +1,18 @@
 package com.szlazakm.safechat.utils.auth
 
-import android.app.Service
-import android.content.Intent
-import android.os.IBinder
 import android.util.Log
-import com.szlazakm.safechat.client.data.Repositories.PreKeyRepository
-import com.szlazakm.safechat.client.data.Repositories.UserRepository
+import com.szlazakm.safechat.client.data.repositories.UserRepository
 import com.szlazakm.safechat.client.data.services.PreKeyService
 import com.szlazakm.safechat.webclient.dtos.OPKCreateDTO
 import com.szlazakm.safechat.webclient.dtos.OPKsCreateDTO
 import com.szlazakm.safechat.webclient.dtos.SPKCreateDTO
 import com.szlazakm.safechat.webclient.webservices.PreKeyWebService
-import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import org.signal.libsignal.protocol.ecc.ECPrivateKey
-import org.whispersystems.libsignal.IdentityKey
 import org.whispersystems.libsignal.IdentityKeyPair
+import org.whispersystems.libsignal.ecc.DjbECPublicKey
 import org.whispersystems.libsignal.state.PreKeyRecord
 import org.whispersystems.libsignal.state.SignedPreKeyRecord
 import org.whispersystems.libsignal.util.KeyHelper
-import java.security.interfaces.ECPublicKey
+import java.util.Base64
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.random.Random
@@ -97,14 +88,17 @@ class PreKeyManager @Inject constructor(
             return
         }
 
-        val identityKeyPair = IdentityKeyPair(localUser.identityKeyPair)
+        val normalizedIdentityKeyPair = decode(localUser.identityKeyPair)
+        val identityKeyPair = IdentityKeyPair(normalizedIdentityKeyPair)
         val signedPreKeys = generateSignedPreKeys(identityKeyPair)
+
+        val publicSignedPrekey = signedPreKeys.keyPair.publicKey as DjbECPublicKey
 
         val spkCreateDTO = SPKCreateDTO(
             phoneNumber = localUser.phoneNumber,
             id = signedPreKeys.id,
-            signedPreKey = signedPreKeys.keyPair.publicKey.serialize(),
-            signature = signedPreKeys.signature,
+            signedPreKey = encode(publicSignedPrekey.publicKey),
+            signature = encode(signedPreKeys.signature),
             timestamp = signedPreKeys.timestamp
         )
 
@@ -139,7 +133,7 @@ class PreKeyManager @Inject constructor(
         val opkCreateDTOs = newOpks.map {
             opk -> OPKCreateDTO(
                 id = opk.id,
-                preKey = opk.keyPair.publicKey.serialize()
+                preKey = encode((opk.keyPair.publicKey as DjbECPublicKey).publicKey)
             )
         }
 
@@ -170,5 +164,13 @@ class PreKeyManager @Inject constructor(
 
     fun generateIdentityKeys() : IdentityKeyPair? {
         return KeyHelper.generateIdentityKeyPair()
+    }
+
+    private fun encode(bytes: ByteArray): String {
+        return Base64.getEncoder().encodeToString(bytes)
+    }
+
+    private fun decode(string: String): ByteArray {
+        return Base64.getDecoder().decode(string)
     }
 }

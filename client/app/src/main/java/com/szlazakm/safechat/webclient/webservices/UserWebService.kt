@@ -1,5 +1,6 @@
 package com.szlazakm.safechat.webclient.webservices
 
+import com.szlazakm.safechat.webclient.dtos.KeyBundleDTO
 import com.szlazakm.safechat.webclient.dtos.UserCreateDTO
 import com.szlazakm.safechat.webclient.dtos.UserDTO
 import com.szlazakm.safechat.webclient.dtos.VerifyPhoneNumberDTO
@@ -19,4 +20,8 @@ interface UserWebService {
 
     @POST("/api/user/verify")
     fun verifyPhoneNumber(@Body verifyPhoneNumberDTO: VerifyPhoneNumberDTO) : Call<Boolean>
+
+    @GET("/api/user/keyBundle")
+    fun getKeyBundle(@Query("phoneNumber") phoneNumber: String): Call<KeyBundleDTO>
+
 }

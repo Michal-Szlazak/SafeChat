@@ -7,12 +7,11 @@ import com.szlazakm.safechat.client.domain.Message
 
 @Composable
 fun MessageList(
-    viewModel: ChatViewModel,
     messages: List<Message.TextMessage>
 ) {
     LazyColumn {
         items(messages) { message ->
-            MessageListItem(viewModel = viewModel, message = message)
+            MessageListItem( message = message)
         }
     }
 }

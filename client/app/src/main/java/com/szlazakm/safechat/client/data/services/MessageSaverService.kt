@@ -5,21 +5,20 @@ import android.content.Intent
 import android.os.IBinder
 import android.util.Log
 import com.google.gson.Gson
-import com.szlazakm.safechat.client.data.Entities.MessageEntity
-import com.szlazakm.safechat.client.data.Repositories.ContactRepository
-import com.szlazakm.safechat.client.data.Repositories.MessageRepository
-import com.szlazakm.safechat.client.data.Repositories.UserRepository
+import com.szlazakm.safechat.client.data.entities.MessageEntity
+import com.szlazakm.safechat.client.data.repositories.ContactRepository
+import com.szlazakm.safechat.client.data.repositories.MessageRepository
+import com.szlazakm.safechat.client.data.repositories.UserRepository
 import com.szlazakm.safechat.client.domain.Contact
+import com.szlazakm.safechat.utils.auth.EncryptedMessageReceiver
 import com.szlazakm.safechat.webclient.dtos.MessageAcknowledgementDTO
-import com.szlazakm.safechat.webclient.dtos.OutputMessageDTO
+import com.szlazakm.safechat.webclient.dtos.OutputEncryptedMessageDTO
 import com.szlazakm.safechat.webclient.dtos.UserDTO
 import com.szlazakm.safechat.webclient.webservices.ChatWebService
 import com.szlazakm.safechat.webclient.webservices.UserWebService
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import retrofit2.Response
@@ -38,10 +37,26 @@ class MessageSaverService : Service(){
     lateinit var userRepository: UserRepository
     @Inject
     lateinit var retrofit: Retrofit
+    @Inject
+    lateinit var encryptedMessageReceiver: EncryptedMessageReceiver
 
     private val stompService: StompService = StompService()
     private val gson: Gson = Gson()
     private val serviceScope = CoroutineScope(Dispatchers.Default)
+
+    private var messageListener: MessageListener? = null
+
+    fun setMessageListener(listener: MessageListener) {
+        messageListener = listener
+    }
+
+    companion object {
+        private var instance: MessageSaverService? = null
+
+        fun getInstance(): MessageSaverService? {
+            return instance
+        }
+    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d("MessageSaverService", "onStart called")
@@ -52,7 +67,14 @@ class MessageSaverService : Service(){
         return START_STICKY
     }
 
+    override fun onCreate() {
+        instance = this
+        super.onCreate()
+        Log.d("MessageSaverService", "onCreate called")
+    }
+
     override fun onDestroy() {
+        instance = null
         super.onDestroy()
         Log.d("MessageSaverService", "onDestroy called")
     }
@@ -68,7 +90,7 @@ class MessageSaverService : Service(){
             )
             return
         } else {
-            Log.e(
+            Log.d(
                 "MessageSaverService",
                 "LocalUser is found. Loading MessageServiceCreation."
             )
@@ -79,7 +101,22 @@ class MessageSaverService : Service(){
 
         newMessages?.forEach{
             withContext(Dispatchers.IO) {
-                saveNewMessage(it)
+                val decryptedMessage = decryptMessage(it)
+
+                if(decryptedMessage == null) {
+                    Log.e(
+                        "MessageSaverService",
+                        "Failed to decrypt message from: ${it.from}"
+                    )
+                    return@withContext
+                } else{
+                    Log.d(
+                        "MessageSaverService",
+                        "Successfully decrypted message from: ${it.from}" +
+                                " message: $decryptedMessage")
+                }
+
+                saveNewMessage(decryptedMessage)
             }
         }
 
@@ -91,24 +128,40 @@ class MessageSaverService : Service(){
 
             serviceScope.launch {
 
-                val outputMessageDTO = gson.fromJson(message, OutputMessageDTO::class.java)
+                val outputEncryptedMessageDTO = gson.fromJson(message, OutputEncryptedMessageDTO::class.java)
+                val decryptedMessage = decryptMessage(outputEncryptedMessageDTO)
 
-                saveNewMessage(outputMessageDTO)
-                acknowledgeMessage(MessageAcknowledgementDTO(outputMessageDTO.id))
+                if(decryptedMessage == null) {
+                    Log.e(
+                        "MessageSaverService",
+                        "Failed to decrypt message from: ${outputEncryptedMessageDTO.from}"
+                    )
+                    return@launch
+                } else{
+                    Log.d(
+                        "MessageSaverService",
+                        "Successfully decrypted message from: ${outputEncryptedMessageDTO.from}" +
+                                " message: $decryptedMessage")
+                }
+
+                messageListener?.onNewMessage(decryptedMessage)
+
+                saveNewMessage(decryptedMessage)
+                acknowledgeMessage(MessageAcknowledgementDTO(outputEncryptedMessageDTO.id))
             }
 
         }
     }
 
-    private suspend fun createNewContact(outputMessageDTO: OutputMessageDTO) {
+    private suspend fun createNewContact(decryptedMessage: MessageEntity) {
         val userDTO = withContext(Dispatchers.IO) {
-            findUserByPhoneAsync(outputMessageDTO.from)
+            findUserByPhoneAsync(decryptedMessage.senderPhoneNumber)
         }
 
         if(userDTO == null) {
             Log.e(
                 "MessageSaverService",
-                "Contact for phone: ${outputMessageDTO.from} not found."
+                "Contact for phone: ${decryptedMessage.senderPhoneNumber} not found."
             )
             return
         }
@@ -128,25 +181,48 @@ class MessageSaverService : Service(){
         )
     }
 
-    private suspend fun saveNewMessage(outputMessageDTO: OutputMessageDTO) {
+    private suspend fun decryptMessage(outputEncryptedMessageDTO: OutputEncryptedMessageDTO): MessageEntity? {
 
-        val contactFrom = contactRepository.getContact(outputMessageDTO.from)
+        val decryptedMessage = encryptedMessageReceiver.decryptMessage(outputEncryptedMessageDTO)
 
-        if(contactFrom == null) {
-            createNewContact(outputMessageDTO)
+        if(decryptedMessage == null) {
+            Log.e(
+                "MessageSaverService",
+                "Failed to decrypt message from: ${outputEncryptedMessageDTO.from}"
+            )
+            return null
+        } else{
+            Log.d(
+                "MessageSaverService",
+                "Successfully decrypted message from: ${outputEncryptedMessageDTO.from}" +
+                        " message: $decryptedMessage")
         }
 
         val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-        val timestamp = dateFormat.parse(outputMessageDTO.date)
+        val timestamp = dateFormat.parse(outputEncryptedMessageDTO.date)
 
-        val messageEntity = MessageEntity(
-            content = outputMessageDTO.text,
-            senderPhoneNumber = outputMessageDTO.from,
-            receiverPhoneNumber = outputMessageDTO.to,
+        return MessageEntity(
+            senderPhoneNumber = outputEncryptedMessageDTO.from,
+            receiverPhoneNumber = outputEncryptedMessageDTO.to,
+            content = decryptedMessage,
             timestamp = timestamp
         )
+    }
 
-        messageRepository.addMessage(messageEntity)
+    private suspend fun saveNewMessage(decryptedMessage: MessageEntity) {
+
+        val contactFrom = contactRepository.getContact(decryptedMessage.senderPhoneNumber)
+
+        if(contactFrom == null) {
+            createNewContact(decryptedMessage)
+        }
+
+        Log.d(
+            "MessageSaverService",
+            "Received new message from: ${decryptedMessage.senderPhoneNumber}" +
+                    " message: ${decryptedMessage.content}")
+
+        messageRepository.addMessage(decryptedMessage)
     }
 
     private suspend fun findUserByPhoneAsync(phoneNumber: String): UserDTO? {
@@ -175,10 +251,10 @@ class MessageSaverService : Service(){
 
             try {
                 val response : Response<Void> = chatWebService.acknowledge(messageAcknowledgementDTO).execute()
-                if(!response.isSuccessful) {
-                    Log.e("MessageSaverService", "Failed to send message receive acknowledgement.")
+                if(response.isSuccessful) {
+                    Log.d("MessageSaverService", "Successfully to send message receive acknowledgement.")
                 } else {
-                    Log.e("MessageSaverService", "Successfully to send message receive acknowledgement.")
+                    Log.e("MessageSaverService", "Failed to send message receive acknowledgement.")
                 }
             } catch (e: Exception) {
                 Log.e("MessageSaverService",
@@ -187,12 +263,12 @@ class MessageSaverService : Service(){
         }
     }
 
-    private suspend fun getNewMessages(localUserPhoneNumber: String) : List<OutputMessageDTO>? {
+    private suspend fun getNewMessages(localUserPhoneNumber: String) : List<OutputEncryptedMessageDTO>? {
         return withContext(Dispatchers.IO) {
             val chatWebService = retrofit.create(ChatWebService::class.java)
 
             try {
-                val response : Response<List<OutputMessageDTO>> =
+                val response : Response<List<OutputEncryptedMessageDTO>> =
                     chatWebService.getNewMessages(localUserPhoneNumber).execute()
                 if(response.isSuccessful) {
                     Log.d("MessageSaverService", "Successfully fetched new messages.")
@@ -210,7 +286,6 @@ class MessageSaverService : Service(){
     }
 
     override fun onBind(p0: Intent?): IBinder? {
-        TODO("Not yet implemented")
         return null // We don't need binding, so returning null
     }
 }

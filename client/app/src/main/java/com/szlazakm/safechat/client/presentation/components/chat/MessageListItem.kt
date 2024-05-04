@@ -1,5 +1,6 @@
 package com.szlazakm.safechat.client.presentation.components.chat
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,14 +16,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.szlazakm.safechat.client.domain.LocalUserData
 import com.szlazakm.safechat.client.domain.Message
 
 @Composable
 fun MessageListItem(
-    viewModel: ChatViewModel,
     message: Message.TextMessage
 ) {
-    val isLocalUserMessage = message.senderPhoneNumber == viewModel.localUserEntity.value!!.phoneNumber
+    val localUserPhoneNumber = LocalUserData.getInstance().getPhoneNumber()
+    val isLocalUserMessage = message.senderPhoneNumber == localUserPhoneNumber
 
     val backgroundColor = if (isLocalUserMessage) {
         Color.Gray // Background color for local user's messages

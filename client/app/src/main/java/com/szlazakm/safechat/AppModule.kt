@@ -3,13 +3,20 @@ package com.szlazakm.safechat
 import android.app.Application
 import android.content.Context
 import androidx.room.Room
-import com.szlazakm.safechat.client.data.Repositories.ContactRepository
-import com.szlazakm.safechat.client.data.Repositories.MessageRepository
-import com.szlazakm.safechat.client.data.Repositories.PreKeyRepository
-import com.szlazakm.safechat.client.data.Repositories.UserRepository
+import com.szlazakm.safechat.client.data.repositories.ContactRepository
+import com.szlazakm.safechat.client.data.repositories.EncryptionSessionRepository
+import com.szlazakm.safechat.client.data.repositories.MessageRepository
+import com.szlazakm.safechat.client.data.repositories.PreKeyRepository
+import com.szlazakm.safechat.client.data.repositories.UserRepository
+import com.szlazakm.safechat.client.data.services.MessageSaverManager
 import com.szlazakm.safechat.client.data.services.PreKeyService
+import com.szlazakm.safechat.utils.auth.EncryptedMessageSender
+import com.szlazakm.safechat.utils.auth.AliceEncryptionSessionInitializer
+import com.szlazakm.safechat.utils.auth.BobDecryptionSessionInitializer
+import com.szlazakm.safechat.utils.auth.EncryptedMessageReceiver
 import com.szlazakm.safechat.utils.auth.PreKeyManager
 import com.szlazakm.safechat.webclient.webservices.PreKeyWebService
+import com.szlazakm.safechat.webclient.webservices.UserWebService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -83,4 +90,52 @@ class AppModule {
     ): PreKeyManager {
         return PreKeyManager(userRepository, preKeyService, preKeyWebService)
     }
+
+    @Provides
+    fun provideUserWebService(retrofit: Retrofit) : UserWebService{
+        return retrofit.create(UserWebService::class.java)
+    }
+
+    @Provides
+    fun providesEncryptionSessionInitializer(
+        userWebService: UserWebService,
+        userRepository: UserRepository
+    ) : AliceEncryptionSessionInitializer {
+        return AliceEncryptionSessionInitializer(userWebService, userRepository)
+    }
+
+    @Provides
+    fun provideEncryptedMessageSender(
+        aliceEncryptionSessionInitializer: AliceEncryptionSessionInitializer,
+        encryptionSessionRepository: EncryptionSessionRepository
+    ): EncryptedMessageSender {
+        return EncryptedMessageSender(aliceEncryptionSessionInitializer, encryptionSessionRepository)
+    }
+
+    @Provides
+    fun provideEncryptionSessionRepository(context: Context): EncryptionSessionRepository {
+        return EncryptionSessionRepository(context)
+    }
+
+    @Provides
+    fun provideEncryptedMessageReceiver(
+        encryptionSessionRepository: EncryptionSessionRepository,
+        bobDecryptionSessionInitializer: BobDecryptionSessionInitializer
+    ): EncryptedMessageReceiver {
+        return EncryptedMessageReceiver(encryptionSessionRepository, bobDecryptionSessionInitializer)
+    }
+
+    @Provides
+    fun provideBobDecryptionSessionInitializer(
+        userRepository: UserRepository,
+        preKeyRepository: PreKeyRepository
+    ): BobDecryptionSessionInitializer {
+        return BobDecryptionSessionInitializer(userRepository, preKeyRepository)
+    }
+
+    @Provides
+    fun provideMessageSaverManager(context: Context): MessageSaverManager {
+        return MessageSaverManager(context)
+    }
+
 }

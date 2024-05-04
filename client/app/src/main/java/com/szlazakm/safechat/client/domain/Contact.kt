@@ -1,7 +1,7 @@
 package com.szlazakm.safechat.client.domain
 
 import androidx.compose.ui.graphics.ImageBitmap
-import com.szlazakm.safechat.client.data.Entities.ContactEntity
+import com.szlazakm.safechat.client.data.entities.ContactEntity
 
 data class Contact(
     val firstName: String,

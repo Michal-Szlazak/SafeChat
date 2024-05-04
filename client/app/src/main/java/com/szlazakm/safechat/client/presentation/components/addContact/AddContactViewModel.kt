@@ -2,7 +2,7 @@ package com.szlazakm.safechat.client.presentation.components.addContact
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.szlazakm.safechat.client.data.Repositories.ContactRepository
+import com.szlazakm.safechat.client.data.repositories.ContactRepository
 import com.szlazakm.safechat.client.domain.Contact
 import com.szlazakm.safechat.client.presentation.States.AddContactState
 import com.szlazakm.safechat.webclient.dtos.UserDTO
@@ -54,14 +54,8 @@ class AddContactViewModel @Inject constructor(
         }
     }
 
-    fun createContactIfNotExists(userDTO: UserDTO) {
+    fun createContactIfNotExists(contact: Contact) {
 
-        val contact = Contact(
-            firstName = userDTO.firstName,
-            lastName = userDTO.lastName,
-            phoneNumber = userDTO.phoneNumber,
-            photo = null
-        )
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 if(!repository.contactExists(contact.phoneNumber)) {

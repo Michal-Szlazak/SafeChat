@@ -30,13 +30,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.szlazakm.safechat.client.domain.Contact
 import com.szlazakm.safechat.client.presentation.ScreenRoutes
+import com.szlazakm.safechat.client.presentation.components.chat.ChatViewModel
 import com.szlazakm.safechat.webclient.dtos.UserDTO
 
 @Composable
 fun AddContactScreen(
     navController: NavController,
-    viewModel: AddContactViewModel
+    viewModel: AddContactViewModel,
+    chatViewModel: ChatViewModel
 ) {
     var phoneNumber by remember { mutableStateOf("") }
     val state = viewModel.state.collectAsState().value
@@ -88,9 +91,17 @@ fun AddContactScreen(
                     user = user,
                     onClick = {
 
-                        viewModel.createContactIfNotExists(state.userDTO)
+                        val contact = Contact(
+                            firstName = user.firstName,
+                            lastName = user.lastName,
+                            phoneNumber = user.phoneNumber,
+                            photo = null
+                        )
 
+                        viewModel.createContactIfNotExists(contact)
+                        chatViewModel.setContact(contact)
                         navController.navigate(
+
                             ScreenRoutes.Chat.route.replace(
                                 "{phoneNumber}",
                                 state.userDTO.phoneNumber

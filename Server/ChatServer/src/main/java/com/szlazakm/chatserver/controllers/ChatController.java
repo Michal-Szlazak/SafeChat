@@ -1,15 +1,16 @@
 package com.szlazakm.chatserver.controllers;
 
 import com.szlazakm.chatserver.dtos.MessageAcknowledgementDTO;
-import com.szlazakm.chatserver.dtos.MessageDTO;
+import com.szlazakm.chatserver.dtos.EncryptedMessageDTO;
 import com.szlazakm.chatserver.dtos.MessageSentResponseDto;
-import com.szlazakm.chatserver.dtos.OutputMessageDTO;
+import com.szlazakm.chatserver.dtos.OutputEncryptedMessageDTO;
 import com.szlazakm.chatserver.entities.Message;
 import com.szlazakm.chatserver.services.MessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
+import org.whispersystems.libsignal.logging.Log;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -25,26 +26,51 @@ public class ChatController {
 
     @PostMapping("/room")
     @ResponseStatus(HttpStatus.CREATED)
-    public MessageSentResponseDto sendSpecific(@RequestBody MessageDTO msg){
+    public MessageSentResponseDto sendSpecific(@RequestBody EncryptedMessageDTO msg){
 
         String timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
 
         Message message = Message.builder()
+                .isInitial(msg.isInitial())
                 .toPhoneNumber(msg.getTo())
                 .fromPhoneNumber(msg.getFrom())
-                .text(msg.getText())
+                .cipher(msg.getCipher())
+                .aliceIdentityPublicKey(msg.getAliceIdentityPublicKey())
+                .aliceEphemeralPublicKey(msg.getAliceEphemeralPublicKey())
+                .bobSpkId(msg.getBobSpkId())
+                .bobOpkId(msg.getBobOpkId())
                 .timestamp(timestamp)
                 .build();
 
         UUID messageId = messageService.saveMessage(message);
 
-        OutputMessageDTO out = new OutputMessageDTO(
-                messageId,
-                msg.getFrom(),
-                msg.getTo(),
-                msg.getText(),
-                timestamp
-        );
+        OutputEncryptedMessageDTO out;
+
+        Log.d("ChatController", "Encrypted message: " + msg);
+        System.out.println(msg);
+        if(msg.isInitial()) {
+            out = new OutputEncryptedMessageDTO(
+                    messageId,
+                    msg.isInitial(),
+                    msg.getFrom(),
+                    msg.getTo(),
+                    msg.getCipher(),
+                    msg.getAliceIdentityPublicKey(),
+                    msg.getAliceEphemeralPublicKey(),
+                    msg.getBobOpkId(),
+                    msg.getBobSpkId(),
+                    timestamp
+                    );
+        } else {
+            out = new OutputEncryptedMessageDTO(
+                    messageId,
+                    msg.isInitial(),
+                    msg.getFrom(),
+                    msg.getTo(),
+                    msg.getCipher(),
+                    timestamp
+            );
+        }
 
         simpMessagingTemplate.convertAndSend(
                 "/user/queue/" + msg.getTo(), out);
@@ -53,13 +79,13 @@ public class ChatController {
     }
 
     @PostMapping("/acknowledge")
-    public void acknowledgeMessage(MessageAcknowledgementDTO messageAcknowledgementDTO) {
+    public void acknowledgeMessage(@RequestBody MessageAcknowledgementDTO messageAcknowledgementDTO) {
 
         messageService.acknowledgeMessage(messageAcknowledgementDTO);
     }
 
     @GetMapping("/newMessages/{to}")
-    public List<OutputMessageDTO> getAllNewMessages(@PathVariable("to") String toPhoneNumber) {
+    public List<OutputEncryptedMessageDTO> getAllNewMessages(@PathVariable("to") String toPhoneNumber) {
 
         return messageService.getAllNewMessages(toPhoneNumber);
     }

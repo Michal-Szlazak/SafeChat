@@ -8,9 +8,9 @@ data class SPKCreateDTO (
     @JsonProperty("id")
     val id: Int,
     @JsonProperty("signedPreKey")
-    val signedPreKey: ByteArray,
+    val signedPreKey: String,
     @JsonProperty("signature")
-    val signature: ByteArray,
+    val signature: String,
     @JsonProperty("timestamp")
     val timestamp: Long
 )

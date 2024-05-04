@@ -7,19 +7,23 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
-import com.szlazakm.safechat.client.domain.Contact
-import com.szlazakm.safechat.client.presentation.Events.ChatEvent
+import com.szlazakm.safechat.client.presentation.events.ChatEvent
 
 @Composable
 fun ChatScreen(
-    viewModel: ChatViewModel,
-    contact: Contact
+    viewModel: ChatViewModel
 ) {
+
+    val selectedContact = viewModel.state.collectAsState().value.selectedContact
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = contact.firstName + " " + contact.lastName) },
+                title = {
+                    if (selectedContact != null) {
+                        Text(text =  selectedContact.firstName + " " + selectedContact.lastName)
+                    }
+                },
                 backgroundColor = MaterialTheme.colors.primarySurface
             )
         },
@@ -30,7 +34,7 @@ fun ChatScreen(
                     .padding(innerPadding)
             ) {
                 val state = viewModel.state.collectAsState().value
-                MessageList(viewModel, messages = state.messages)
+                MessageList(messages = state.messages)
                 Spacer(modifier = Modifier.weight(1f))
                 MessageInput(onSend = { message ->
                     viewModel.onEvent(ChatEvent.SendMessage(message))

@@ -1,16 +1,12 @@
 package com.szlazakm.safechat.webclient.webservices
 
-import com.szlazakm.safechat.webclient.dtos.OPKCreateDTO
 import com.szlazakm.safechat.webclient.dtos.OPKsCreateDTO
 import com.szlazakm.safechat.webclient.dtos.SPKCreateDTO
-import com.szlazakm.safechat.webclient.dtos.UserCreateDTO
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
-import retrofit2.http.Query
-import java.util.UUID
 
 interface PreKeyWebService {
 

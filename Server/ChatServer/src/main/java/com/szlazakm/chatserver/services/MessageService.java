@@ -1,7 +1,7 @@
 package com.szlazakm.chatserver.services;
 
 import com.szlazakm.chatserver.dtos.MessageAcknowledgementDTO;
-import com.szlazakm.chatserver.dtos.OutputMessageDTO;
+import com.szlazakm.chatserver.dtos.OutputEncryptedMessageDTO;
 import com.szlazakm.chatserver.entities.Message;
 import com.szlazakm.chatserver.repositories.MessageRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +27,7 @@ public class MessageService {
         messageRepository.deleteById(messageId);
     }
 
-    public List<OutputMessageDTO> getAllNewMessages(String toPhoneNumber) {
+    public List<OutputEncryptedMessageDTO> getAllNewMessages(String toPhoneNumber) {
 
         List<Message> newMessages = messageRepository.getAllByToPhoneNumber(toPhoneNumber);
 
@@ -36,11 +36,16 @@ public class MessageService {
         );
 
         return newMessages.stream().map(
-                message -> new OutputMessageDTO(
+                message -> new OutputEncryptedMessageDTO(
                         message.getMessageId(),
+                        message.isInitial(),
                         message.getFromPhoneNumber(),
                         message.getToPhoneNumber(),
-                        message.getText(),
+                        message.getCipher(),
+                        null,
+                        null,
+                        null,
+                        null,
                         message.getTimestamp()
                 )
         ).toList();

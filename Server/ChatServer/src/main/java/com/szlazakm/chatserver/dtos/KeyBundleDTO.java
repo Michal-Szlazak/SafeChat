@@ -9,12 +9,12 @@ import lombok.extern.jackson.Jacksonized;
 @Jacksonized
 public class KeyBundleDTO {
 
-    byte[] identityKey;
+    String identityKey;
 
     int signedPreKeyId;
-    byte[] signedPreKey;
-    byte[] signature;
+    String signedPreKey;
+    String signature;
 
-    int onetimePreKeyId;
-    byte[] onetimePreKey;
+    Integer onetimePreKeyId;
+    String onetimePreKey;
 }

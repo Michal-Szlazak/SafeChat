@@ -96,10 +96,14 @@ public class UserService {
         List<OPK> opkList = user.getOPKS();
 
         OPK opk = null;
+        Integer opkKeyId = null;
+        String opkPreKey = null;
 
         if(!opkList.isEmpty()) {
             opk = opkList.get(0);
             opkList.remove(0);
+            opkKeyId = opk.keyId;
+            opkPreKey = opk.preKey;
         }
 
         userRepository.save(user);
@@ -109,8 +113,8 @@ public class UserService {
                 .signedPreKeyId(spk.getKeyId())
                 .signedPreKey(spk.getSignedPreKey())
                 .signature(spk.getSignature())
-                .onetimePreKeyId(opk.keyId)
-                .onetimePreKey(opk.preKey)
+                .onetimePreKeyId(opkKeyId)
+                .onetimePreKey(opkPreKey)
                 .build();
     }
 

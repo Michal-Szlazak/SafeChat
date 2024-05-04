@@ -13,6 +13,6 @@ public class UserCreateDTO {
     String firstName;
     String lastName;
     String phoneNumber;
-    byte[] identityKey;
+    String identityKey;
     String pin;
 }

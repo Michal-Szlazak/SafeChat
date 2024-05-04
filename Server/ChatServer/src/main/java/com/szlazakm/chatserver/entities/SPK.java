@@ -19,8 +19,8 @@ public class SPK {
     @GeneratedValue
     private UUID databaseId;
     private int keyId;
-    private byte[] signedPreKey;
-    private byte[] signature;
+    private String signedPreKey;
+    private String signature;
     private Long timestamp;
 
     @OneToOne

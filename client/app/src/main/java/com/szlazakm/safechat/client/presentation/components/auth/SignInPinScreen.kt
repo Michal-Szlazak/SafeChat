@@ -18,8 +18,6 @@ import com.szlazakm.safechat.client.presentation.States.SignInState
 
 @Composable
 fun PinScreen(
-    state: SignInState,
-    viewModel: SignInViewModel,
     onPinEntered: (String) -> Unit
 ) {
     var pin by remember { mutableStateOf("") }
@@ -43,8 +41,7 @@ fun PinScreen(
 
 @Composable
 fun VerifyPinScreen(
-    state: SignInState,
-    onVerify: (Boolean) -> Unit
+    onVerify: (String) -> Unit
 ) {
     var enteredPin by remember { mutableStateOf("") }
 
@@ -59,7 +56,7 @@ fun VerifyPinScreen(
             visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier.padding(vertical = 8.dp)
         )
-        Button(onClick = { onVerify(enteredPin == state.pin) }) {
+        Button(onClick = { onVerify(enteredPin) }) {
             Text(text = "Verify")
         }
     }

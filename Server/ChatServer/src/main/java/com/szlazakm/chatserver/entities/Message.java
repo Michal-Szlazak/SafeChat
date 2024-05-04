@@ -19,8 +19,13 @@ public class Message {
     @Id
     @GeneratedValue()
     private UUID messageId;
+    private boolean isInitial;
     private String fromPhoneNumber;
     private String toPhoneNumber;
-    private String text;
+    private String cipher;
+    String aliceIdentityPublicKey;
+    String aliceEphemeralPublicKey;
+    Integer bobOpkId;
+    Integer bobSpkId;
     private String timestamp;
 }

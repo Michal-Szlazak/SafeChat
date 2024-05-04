@@ -23,7 +23,7 @@ public class User {
     @GeneratedValue
     private UUID userId;
     @Column(nullable = false, length = 600)
-    private byte[] identityKey;
+    private String identityKey;
     @Column(nullable = false)
     private String firstName;
     @Column(nullable = false)

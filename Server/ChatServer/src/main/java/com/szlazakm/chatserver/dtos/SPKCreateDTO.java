@@ -14,7 +14,7 @@ public class SPKCreateDTO {
 
     String phoneNumber;
     int id;
-    byte[] signedPreKey;
-    byte[] signature;
+    String signedPreKey;
+    String signature;
     Long timestamp;
 }

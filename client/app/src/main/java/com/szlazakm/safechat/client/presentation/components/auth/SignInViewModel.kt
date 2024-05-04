@@ -3,10 +3,12 @@ package com.szlazakm.safechat.client.presentation.components.auth
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.szlazakm.safechat.client.data.Entities.UserEntity
-import com.szlazakm.safechat.client.data.Repositories.ContactRepository
-import com.szlazakm.safechat.client.data.Repositories.UserRepository
+import com.szlazakm.safechat.client.data.entities.UserEntity
+import com.szlazakm.safechat.client.data.repositories.ContactRepository
+import com.szlazakm.safechat.client.data.repositories.UserRepository
+import com.szlazakm.safechat.client.data.services.MessageSaverManager
 import com.szlazakm.safechat.client.domain.Contact
+import com.szlazakm.safechat.client.domain.LocalUserData
 import com.szlazakm.safechat.client.presentation.States.SignInState
 import com.szlazakm.safechat.utils.auth.PreKeyManager
 import com.szlazakm.safechat.webclient.dtos.UserCreateDTO
@@ -14,68 +16,49 @@ import com.szlazakm.safechat.webclient.dtos.VerifyPhoneNumberDTO
 import com.szlazakm.safechat.webclient.webservices.UserWebService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.invoke
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
-import retrofit2.Retrofit
+import org.whispersystems.libsignal.ecc.DjbECPublicKey
+import java.util.Base64
 import java.util.Date
 import javax.inject.Inject
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 
 @HiltViewModel
 class SignInViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val contactRepository: ContactRepository,
-    private val retrofit: Retrofit,
-    private val preKeyManager: PreKeyManager
+    private val userWebService: UserWebService,
+    private val preKeyManager: PreKeyManager,
+    private val messageSaverManager: MessageSaverManager
 ): ViewModel() {
 
     private val _state: MutableStateFlow<SignInState> = MutableStateFlow(SignInState())
     val state = _state.asStateFlow()
-    private val userWebService: UserWebService = retrofit.create(UserWebService::class.java)
 
+    suspend fun loadLocalUserData() {
+        return (Dispatchers.IO) {
+            val user = userRepository.getLocalUser()
+            if(user != null) {
+                LocalUserData.getInstance().setUserData(user)
+            }
+        }
+    }
 
-    fun isUserCreated(): Flow<Boolean> = flow {
+    suspend fun isUserCreated(): Boolean {
 
-        val isUserCreated = withContext(Dispatchers.IO) {
+        return (Dispatchers.IO) {
             userRepository.isUserCreated()
         }
-        emit(isUserCreated)
     }
 
     suspend fun verifyPhoneNumber(code: String): Boolean {
         val verifyPhoneNumberDTO = VerifyPhoneNumberDTO(code)
 
-        // Return a suspended coroutine, allowing it to be seamlessly integrated into a coroutine scope
-        return suspendCancellableCoroutine { continuation ->
-            userWebService.verifyPhoneNumber(verifyPhoneNumberDTO).enqueue(object : Callback<Boolean> {
-                override fun onResponse(call: Call<Boolean>, response: Response<Boolean>) {
-                    if (response.isSuccessful) {
-                        val result = response.body()
-                        if(result != null) {
-                            continuation.resume(result)
-                        } else {
-                            continuation.resumeWithException(NullPointerException("Response body is null"))
-                        }
-                    } else {
-                        val errorBody = response.errorBody()?.string()
-                        continuation.resumeWithException(Exception("Failed with response code: ${response.code()}, message: $errorBody"))
-                    }
-                }
-
-                override fun onFailure(call: Call<Boolean>, t: Throwable) {
-                    continuation.resumeWithException(t)
-                }
-            })
+        return (Dispatchers.IO) {
+            userWebService.verifyPhoneNumber(verifyPhoneNumberDTO).execute().isSuccessful
         }
     }
 
@@ -100,7 +83,7 @@ class SignInViewModel @Inject constructor(
             firstName = state.value.firstName,
             lastName = state.value.lastName,
             phoneNumber = state.value.phoneNumber,
-            identityKey = keyPair.publicKey.serialize(),
+            identityKey = encode((keyPair.publicKey.publicKey as DjbECPublicKey).publicKey),
             pin = state.value.pin
         )
 
@@ -124,7 +107,7 @@ class SignInViewModel @Inject constructor(
                 firstName = state.value.firstName,
                 lastName = state.value.lastName,
                 createdAt = Date(),
-                identityKeyPair = keyPair.serialize()
+                identityKeyPair = encode(keyPair.serialize())
             )
 
             val localUserContact = Contact(
@@ -139,9 +122,15 @@ class SignInViewModel @Inject constructor(
                 contactRepository.createContact(localUserContact)
                 preKeyManager.setSignedPreKey()
                 preKeyManager.checkAndProvideOPK()
+                loadMessageSaverService()
+                loadLocalUserData()
             }
 
         }
+    }
+
+    private fun loadMessageSaverService() {
+        messageSaverManager.startMessageSaverService("SignInViewModel")
     }
 
     fun savePin(pin: String) {
@@ -155,6 +144,10 @@ class SignInViewModel @Inject constructor(
         _state.value = _state.value.copy(
             phoneNumber = phoneNumber
         )
+    }
+
+    private fun encode(bytes: ByteArray): String {
+        return Base64.getEncoder().encodeToString(bytes)
     }
 
 }

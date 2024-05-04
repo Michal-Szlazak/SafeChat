@@ -5,7 +5,7 @@ import io.reactivex.disposables.Disposable
 import ua.naiksoftware.stomp.Stomp
 import ua.naiksoftware.stomp.StompClient
 
-class StompService() {
+class StompService {
 
     private var stompClient: StompClient? = null
     private val serverUrl = "ws://192.168.0.230:8080/ws"

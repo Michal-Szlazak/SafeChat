@@ -6,5 +6,5 @@ data class OPKCreateDTO(
     @JsonProperty("id")
     val id: Int,
     @JsonProperty("preKey")
-    val preKey: ByteArray
+    val preKey: String
 )

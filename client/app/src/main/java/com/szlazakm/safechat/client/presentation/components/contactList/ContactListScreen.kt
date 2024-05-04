@@ -22,13 +22,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.szlazakm.safechat.client.presentation.Events.ContactListEvent
+import com.szlazakm.safechat.client.presentation.events.ContactListEvent
 import com.szlazakm.safechat.client.presentation.ScreenRoutes
+import com.szlazakm.safechat.client.presentation.components.chat.ChatViewModel
 
 @Composable
 fun ContactListScreen(
     navController: NavController,
-    viewModel: ContactListViewModel
+    viewModel: ContactListViewModel,
+    chatViewModel: ChatViewModel
 ) {
 
     val state by viewModel.state.collectAsState()
@@ -74,6 +76,7 @@ fun ContactListScreen(
                         .fillMaxWidth()
                         .clickable {
                             viewModel.onEvent(ContactListEvent.OnConversationClick(contact))
+                            chatViewModel.setContact(contact)
                             navController.navigate(
                                 ScreenRoutes.Chat.route.replace("{phoneNumber}", contact.phoneNumber)
                             )

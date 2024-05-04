@@ -22,7 +22,7 @@ public class OPK {
     @GeneratedValue
     public int databaseId;
     public int keyId;
-    public byte[] preKey;
+    public String preKey;
 
     @ManyToOne
     private User user;

@@ -1,30 +1,26 @@
 package com.szlazakm.safechat.client.presentation.components.chat
 
 import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.gson.Gson
-import com.szlazakm.safechat.client.data.Entities.MessageEntity
-import com.szlazakm.safechat.client.data.Entities.UserEntity
-import com.szlazakm.safechat.client.data.Repositories.ContactRepository
-import com.szlazakm.safechat.client.data.Repositories.MessageRepository
-import com.szlazakm.safechat.client.data.Repositories.UserRepository
+import com.szlazakm.safechat.client.data.entities.MessageEntity
+import com.szlazakm.safechat.client.data.repositories.ContactRepository
+import com.szlazakm.safechat.client.data.repositories.MessageRepository
+import com.szlazakm.safechat.client.data.repositories.UserRepository
+import com.szlazakm.safechat.client.data.services.MessageListener
+import com.szlazakm.safechat.client.data.services.MessageSaverService
 import com.szlazakm.safechat.client.domain.Contact
 import com.szlazakm.safechat.client.domain.Message
-import com.szlazakm.safechat.client.presentation.Events.ChatEvent
+import com.szlazakm.safechat.client.presentation.events.ChatEvent
 import com.szlazakm.safechat.client.presentation.States.ChatState
 import com.szlazakm.safechat.webclient.dtos.MessageDTO
 import com.szlazakm.safechat.webclient.dtos.MessageSentResponseDTO
-import com.szlazakm.safechat.webclient.dtos.OutputMessageDTO
 import com.szlazakm.safechat.webclient.webservices.ChatWebService
-import com.szlazakm.safechat.client.data.services.StompService
+import com.szlazakm.safechat.utils.auth.EncryptedMessageSender
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.invoke
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import retrofit2.Response
@@ -37,30 +33,23 @@ class ChatViewModel @Inject constructor(
     private val messageRepository: MessageRepository,
     private val contactRepository: ContactRepository,
     private val userRepository: UserRepository,
-    private val retrofit: Retrofit
-): ViewModel() {
+    private val retrofit: Retrofit,
+    private val encryptedMessageSender: EncryptedMessageSender
+): ViewModel(), MessageListener {
 
     private val chatState: MutableStateFlow<ChatState> = MutableStateFlow(ChatState())
     val state: StateFlow<ChatState> = chatState
-    private val stompService: StompService = StompService()
-
-    private val _contact = MutableLiveData<Contact>()
-    val contact: LiveData<Contact> = _contact
-
-    private val _localUserEntity = MutableLiveData<UserEntity?>()
-    val localUserEntity: MutableLiveData<UserEntity?> = _localUserEntity
 
     private val chatWebService = retrofit.create(ChatWebService::class.java)
 
     fun setContact(contact: Contact) {
-        _contact.value = contact
-    }
-
-    fun getLocalUserEntity() : UserEntity {
-        return localUserEntity.value!!
+        chatState.value = chatState.value.copy(selectedContact = contact)
     }
 
     fun loadChat() {
+
+        val messageSaverService = MessageSaverService.getInstance()
+        messageSaverService?.setMessageListener(this)
 
         viewModelScope.launch {
 
@@ -76,57 +65,14 @@ class ChatViewModel @Inject constructor(
                 return@launch
             }
 
-            _localUserEntity.value = localUserEntity
-
             val messages = withContext(Dispatchers.IO) {
 
-                stompService.disconnect()
-                stompService.connect()
-                stompService.subscribeToTopic("/user/queue/${localUserEntity.phoneNumber}") {
-                    message -> println("Received in ChatViewModel: $message")
-                    val gson = Gson()
-                    val output = gson.fromJson(message, OutputMessageDTO::class.java)
-
-                    if(output.to == localUserEntity.phoneNumber && output.from == contact.value?.phoneNumber ?: "") {
-
-//                    val dateFormat = getDateTimeInstance()
-                        val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-                        val timestamp = dateFormat.parse(output.date)
-
-                        Log.d("Debug message date", "The output ${output.date}")
-
-                        val textMessage = Message.TextMessage(
-                            senderPhoneNumber = output.from,
-                            receiverPhoneNumber = output.to,
-                            content = output.text,
-                            timestamp = timestamp
-                        )
-
-                        val updatedMessages = state.value.messages.toMutableList().apply {
-                            add(textMessage)
-                        }
-                        chatState.value = state.value.copy(messages = updatedMessages)
-                    }
-
-                }
-
                 val from = localUserEntity.phoneNumber
-                val to = _contact.value?.phoneNumber ?: return@withContext emptyList<Message.TextMessage>()
-
+                val to = chatState.value.selectedContact?.phoneNumber ?: return@withContext emptyList<Message.TextMessage>()
                 messageRepository.getMessages(
                     from,
                     to
                 )
-            }
-
-            withContext(Dispatchers.IO) {
-                val from = localUserEntity.phoneNumber
-                val to = _contact.value?.phoneNumber ?: return@withContext emptyList<Message.TextMessage>()
-                val messageList = messageRepository.getMessages(from, to)
-
-                messageList.forEach{
-                    message -> Log.d("ChatViewModel", "Found message $message")
-                }
             }
 
             chatState.value = chatState.value.copy(
@@ -150,7 +96,7 @@ class ChatViewModel @Inject constructor(
 
                 viewModelScope.launch {
 
-                    val selectedContact = contact.value?.phoneNumber ?: run {
+                    val selectedContact = chatState.value.selectedContact?.phoneNumber ?: run {
                         Log.e("ERROR", "Selected contact is null.")
                         return@launch  // Exit the coroutine early if contact.value is null
                     }
@@ -175,10 +121,16 @@ class ChatViewModel @Inject constructor(
 
                     withContext(Dispatchers.IO) {
                         try {
+                            val encryptedMessage = encryptedMessageSender.encryptMessage(messageDTO)
+                            if(encryptedMessage == null) {
+                                Log.e("ChatViewModel", "EncryptedMessage is null. Sending aborted")
+                                return@withContext
+                            }
 
-                            val response : Response<MessageSentResponseDTO> = chatWebService.sendMessage(messageDTO).execute()
+                            val response : Response<MessageSentResponseDTO> = chatWebService
+                                .sendMessage(encryptedMessage).execute()
 
-                            println(response)
+
                             if (response.isSuccessful) {
                                 println("Message send succesfuly. Response code: ${response.code()}")
 
@@ -196,16 +148,16 @@ class ChatViewModel @Inject constructor(
                                     add(message)
                                 }
 
-                                (Dispatchers.IO) {
-                                    messageRepository.addMessage(
-                                        MessageEntity(
-                                            content = event.message,
-                                            senderPhoneNumber = localUser.phoneNumber,
-                                            receiverPhoneNumber = selectedContact,
-                                            timestamp = timestamp
-                                        )
+
+                                messageRepository.addMessage(
+                                    MessageEntity(
+                                        content = event.message,
+                                        senderPhoneNumber = localUser.phoneNumber,
+                                        receiverPhoneNumber = selectedContact,
+                                        timestamp = timestamp
                                     )
-                                }
+                                )
+
 
                                 chatState.value = state.value.copy(messages = updatedMessages)
                             } else {
@@ -227,5 +179,23 @@ class ChatViewModel @Inject constructor(
                 chatState.value = chatState.value.copy(isTyping = false)
             }
         }
+    }
+
+    override fun onNewMessage(message: MessageEntity) {
+
+        Log.d("ChatViewModel", "Received new message via listener: $message")
+
+        val textMessage = Message.TextMessage(
+            content = message.content,
+            senderPhoneNumber = message.senderPhoneNumber,
+            receiverPhoneNumber = message.receiverPhoneNumber,
+            timestamp = message.timestamp
+        )
+
+        val updatedMessages = state.value.messages.toMutableList().apply {
+            add(textMessage)
+        }
+
+        chatState.value = state.value.copy(messages = updatedMessages)
     }
 }

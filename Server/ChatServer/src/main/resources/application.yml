@@ -1,4 +1,8 @@
 
+logging:
+  level:
+    org.springframework: INFO
+
 spring:
   mvc:
     log-request-details: true # for debugging
