@@ -32,7 +32,6 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-
         messageSaverManager.startMessageSaverService("MainActivity")
         lifecycleScope.launch(Dispatchers.IO) {
             preKeyManager.checkAndProvideOPK()

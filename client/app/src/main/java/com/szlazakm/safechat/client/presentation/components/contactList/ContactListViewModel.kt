@@ -26,22 +26,22 @@ class ContactListViewModel @Inject constructor(
     private val _state = MutableStateFlow(ContactListState())
     val state: StateFlow<ContactListState> = _state
 
+
     fun loadContactList() {
         viewModelScope.launch {
 
             val contacts = withContext(Dispatchers.IO) {
-                contactRepository.getContacts()
+                contactRepository.allContacts
             }
 
             _state.value = _state.value.copy(
-                contacts = contacts,
+                contacts = contactRepository.allContacts,
             )
 
         }
     }
 
-    var newContact: Contact? by mutableStateOf(null)
-        private set
+    private var newContact: Contact? by mutableStateOf(null)
 
     fun onEvent(event: ContactListEvent) {
 

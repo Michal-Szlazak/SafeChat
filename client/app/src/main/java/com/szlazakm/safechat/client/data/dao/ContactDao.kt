@@ -1,5 +1,6 @@
 package com.szlazakm.safechat.client.data.dao
 
+import androidx.lifecycle.LiveData
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
@@ -9,7 +10,7 @@ import com.szlazakm.safechat.client.data.entities.ContactEntity
 @Dao
 interface ContactDao {
     @Query("SELECT * FROM contact_entity ORDER BY firstName ASC")
-    fun getContacts(): List<ContactEntity>
+    fun getContacts(): LiveData<List<ContactEntity>>
 
     @Insert
     fun insertContact(contact: ContactEntity)
