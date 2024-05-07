@@ -76,7 +76,11 @@ fun SafeChatApp(
                     onVerifyClick = {
                         //TODO(verify the code)
                         if(it) {
-                            signInViewModel.saveUser()
+                            signInViewModel.saveUser(
+                                navController = navController,
+                                successDestination = ScreenRoutes.ContactList,
+                                failureDestination = ScreenRoutes.SignInUserDetails
+                            )
                             navController.navigate(ScreenRoutes.ContactList.route)
                         } else {
                             navController.navigate(ScreenRoutes.SignIn.route)

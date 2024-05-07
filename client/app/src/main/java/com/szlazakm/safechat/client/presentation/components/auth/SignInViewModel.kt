@@ -3,12 +3,14 @@ package com.szlazakm.safechat.client.presentation.components.auth
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavController
 import com.szlazakm.safechat.client.data.entities.UserEntity
 import com.szlazakm.safechat.client.data.repositories.ContactRepository
 import com.szlazakm.safechat.client.data.repositories.UserRepository
 import com.szlazakm.safechat.client.data.services.MessageSaverManager
 import com.szlazakm.safechat.client.domain.Contact
 import com.szlazakm.safechat.client.domain.LocalUserData
+import com.szlazakm.safechat.client.presentation.ScreenRoutes
 import com.szlazakm.safechat.client.presentation.States.SignInState
 import com.szlazakm.safechat.utils.auth.PreKeyManager
 import com.szlazakm.safechat.webclient.dtos.UserCreateDTO
@@ -58,7 +60,19 @@ class SignInViewModel @Inject constructor(
         val verifyPhoneNumberDTO = VerifyPhoneNumberDTO(code)
 
         return (Dispatchers.IO) {
-            userWebService.verifyPhoneNumber(verifyPhoneNumberDTO).execute().isSuccessful
+            try {
+                val response = userWebService.verifyPhoneNumber(verifyPhoneNumberDTO).execute()
+                if(response.isSuccessful) {
+                    Log.d("SignInViewModel", "Response successful. Body: ${response.body()}")
+                    response.body()?: false
+                } else {
+                    Log.e("SignInViewModel", "Response unsuccessful. Code: ${response.code()}")
+                    response.body()?: false
+                }
+            } catch (e: Exception) {
+                Log.e("SignInViewModel", "Error while trying to verify phone number: ${e.message}")
+                false
+            }
         }
     }
 
@@ -70,7 +84,11 @@ class SignInViewModel @Inject constructor(
         )
     }
 
-    fun saveUser() {
+    fun saveUser(
+        navController: NavController,
+        successDestination: ScreenRoutes,
+        failureDestination: ScreenRoutes
+    ) {
 
         val keyPair = preKeyManager.generateIdentityKeys()
 
@@ -93,37 +111,41 @@ class SignInViewModel @Inject constructor(
                     userWebService.createUser(userCreateDTO).execute()
                 }
                 if (response.isSuccessful) {
-                    println("User created successfully. Response code: ${response.code()}")
+                    Log.d("SignInViewModel", "User created successfully.")
+
+                    val user = UserEntity(
+                        phoneNumber = state.value.phoneNumber,
+                        firstName = state.value.firstName,
+                        lastName = state.value.lastName,
+                        createdAt = Date(),
+                        identityKeyPair = encode(keyPair.serialize())
+                    )
+
+                    val localUserContact = Contact(
+                        phoneNumber = state.value.phoneNumber,
+                        firstName = state.value.firstName,
+                        lastName = state.value.lastName,
+                        photo = null
+                    )
+
+                    withContext(Dispatchers.IO) {
+                        userRepository.createUser(user)
+                        contactRepository.createContact(localUserContact)
+                        preKeyManager.setSignedPreKey()
+                        preKeyManager.checkAndProvideOPK()
+                        loadMessageSaverService()
+                        loadLocalUserData()
+                    }
+
+                    navController.navigate(successDestination.route)
+
                 } else {
-                    println("Failed to create user. Response code: ${response.code()}")
+                    Log.e("SignInViewModel", "Failed to create user: ${response.code()}, message: ${response.raw()}")
+                    navController.navigate(failureDestination.route)
                 }
             } catch (e: Exception) {
-                println("Failed to create user: ${e.message}")
-            }
-
-
-            val user = UserEntity(
-                phoneNumber = state.value.phoneNumber,
-                firstName = state.value.firstName,
-                lastName = state.value.lastName,
-                createdAt = Date(),
-                identityKeyPair = encode(keyPair.serialize())
-            )
-
-            val localUserContact = Contact(
-                phoneNumber = state.value.phoneNumber,
-                firstName = state.value.firstName,
-                lastName = state.value.lastName,
-                photo = null
-            )
-
-            withContext(Dispatchers.IO) {
-                userRepository.createUser(user)
-                contactRepository.createContact(localUserContact)
-                preKeyManager.setSignedPreKey()
-                preKeyManager.checkAndProvideOPK()
-                loadMessageSaverService()
-                loadLocalUserData()
+                Log.e("SignInViewModel", "Error while trying to create user: ${e.message}")
+                navController.navigate(failureDestination.route)
             }
 
         }

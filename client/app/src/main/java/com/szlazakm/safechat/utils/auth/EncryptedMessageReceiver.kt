@@ -73,12 +73,9 @@ class EncryptedMessageReceiver @Inject constructor(
         val iv = encryptedMessage.copyOfRange(ad.size, ad.size + ivSize)
         val ciphertext = encryptedMessage.copyOfRange(ad.size + ivSize, encryptedMessage.size)
 
-        // Process shared secret if needed (e.g., trim to correct size)
-        val processedSharedSecret = symmetricKey.copyOf(32)
-
         // Initialize AES-GCM cipher for decryption
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-        val keySpec = SecretKeySpec(processedSharedSecret, "AES")
+        val keySpec = SecretKeySpec(symmetricKey, "AES")
         val gcmParams = GCMParameterSpec(128, iv)
         cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmParams)
 

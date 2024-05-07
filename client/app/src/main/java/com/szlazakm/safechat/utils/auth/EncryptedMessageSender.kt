@@ -102,13 +102,9 @@ class EncryptedMessageSender @Inject constructor(
         val iv = ByteArray(12) // 12 bytes IV for AES-GCM
         SecureRandom().nextBytes(iv)
 
-        //TODO key is too long so its cut - implementation should be changed
-
-        val processedSharedSecret = symmetricKey.copyOf(32)
-
         // Create AES-GCM cipher instance
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-        val keySpec = SecretKeySpec(processedSharedSecret, "AES")
+        val keySpec = SecretKeySpec(symmetricKey, "AES")
         val gcmParams = GCMParameterSpec(128, iv)
         cipher.init(Cipher.ENCRYPT_MODE, keySpec, gcmParams)
 

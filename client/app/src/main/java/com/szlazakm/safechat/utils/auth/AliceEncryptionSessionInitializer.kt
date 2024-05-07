@@ -72,12 +72,13 @@ class AliceEncryptionSessionInitializer @Inject constructor(
             }
 
             val symmetricKey = generateSymmetricKey(initializationKeyBundle)
+            val derivedKeys = KDF.calculateDerivedKeys(symmetricKey)
 
             initializeInitialMessageEncryptionBundle(
                 keyBundleDTO,
                 user,
                 initializationKeyBundle,
-                symmetricKey
+                derivedKeys.rootKey.keyBytes
             )
         }
     }
@@ -114,11 +115,11 @@ class AliceEncryptionSessionInitializer @Inject constructor(
     private fun initializeKeyBundle(keyBundleDTO: KeyBundleDTO, localUser: UserEntity): InitializationKeyBundle? {
         val bobIdentityKey = keyBundleDTO.identityKey
         val bobSignedPreKey = keyBundleDTO.signedPreKey
-        val bobOpk = keyBundleDTO.onetimePreKey
+        var bobOpk : ByteArray? = null
 
-        if(bobOpk == null) {
+        if(keyBundleDTO.onetimePreKey != null) {
             Log.d("EncryptionSessionManager", "Bob's OPK is null.")
-            return null
+            bobOpk = decode(keyBundleDTO.onetimePreKey)
         }
 
         val aliceEphemeralKeyPair = KeyHelper.generateSenderSigningKey()
@@ -132,7 +133,7 @@ class AliceEncryptionSessionInitializer @Inject constructor(
         return InitializationKeyBundle(
             decode(bobIdentityKey),
             decode(bobSignedPreKey),
-            decode(bobOpk),
+            bobOpk,
             alicePrivateIdentityKey,
             aliceEphemeralPrivateKey,
             aliceEphemeralPublicKey

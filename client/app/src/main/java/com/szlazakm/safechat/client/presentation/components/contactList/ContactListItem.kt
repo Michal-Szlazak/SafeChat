@@ -10,12 +10,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.szlazakm.safechat.client.domain.Contact
+import com.szlazakm.safechat.client.domain.LocalUserData
 
 @Composable
 fun ContactListItem(
     contact: Contact,
     modifier: Modifier = Modifier
 ) {
+
+    val localUserPhoneNumber = LocalUserData.getInstance().getPhoneNumber()
+    val text = if (contact.phoneNumber == localUserPhoneNumber) {
+        "${contact.firstName} ${contact.lastName} (You)"
+    } else {
+        "${contact.firstName} ${contact.lastName}"
+    }
     Row (
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically
@@ -29,7 +37,7 @@ fun ContactListItem(
         Spacer(Modifier.width(16.dp))
 
         Text(
-            text = "${contact.firstName} ${contact.lastName}",
+            text = text,
             modifier = Modifier.weight(1f)
         )
     }

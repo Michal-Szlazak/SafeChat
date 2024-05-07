@@ -42,11 +42,12 @@ class BobDecryptionSessionInitializer @Inject constructor(
             }
 
             val symmetricKey = generateSymmetricKey(initializationKeyBundle)
+            val derivedKeys = KDF.calculateDerivedKeys(symmetricKey)
 
             val ad = initializationKeyBundle.aliceIdentityKey + initializationKeyBundle.bobPublicIdentityKey
 
             BobInitializeSessionBundle(
-                symmetricKey,
+                derivedKeys.rootKey.keyBytes,
                 ad
             )
         }
@@ -89,10 +90,16 @@ class BobDecryptionSessionInitializer @Inject constructor(
     private suspend fun initializeKeyBundle(encryptedMessage: OutputEncryptedMessageDTO, localUser: UserEntity): BobInitializationKeyBundle? {
         val aliceIdentityKey = encryptedMessage.aliceIdentityPublicKey
         val aliceEphemeralPublicKey = encryptedMessage.aliceEphemeralPublicKey
+        var bobOpk : ByteArray? = null
 
-        if(encryptedMessage.bobOpkId == null) {
+        if(encryptedMessage.bobOpkId != null) {
             Log.e("BobDecryptionSessionInitializer", "Bob OPK ID is null.")
-            return null
+
+            val encodedBobOpk = (Dispatchers.IO) {
+                preKeyRepository.getOPKById(encryptedMessage.bobOpkId)
+            }.privateOPK
+
+            bobOpk = decode(encodedBobOpk)
         }
 
         if(encryptedMessage.bobSpkId == null) {
@@ -110,9 +117,6 @@ class BobDecryptionSessionInitializer @Inject constructor(
             return null
         }
 
-        val bobOpk = (Dispatchers.IO) {
-            preKeyRepository.getOPKById(encryptedMessage.bobOpkId)
-        }.privateOPK
         val bobSignedPreKey = (Dispatchers.IO) {
             preKeyRepository.getSPKById(encryptedMessage.bobSpkId)
         }.privateKey
@@ -125,7 +129,7 @@ class BobDecryptionSessionInitializer @Inject constructor(
         return BobInitializationKeyBundle(
             decode(aliceIdentityKey),
             decode(aliceEphemeralPublicKey),
-            decode(bobOpk),
+            bobOpk,
             decode(bobSignedPreKey),
             bobPrivateIdentityKey,
             bobPublicIdentityKey
@@ -139,7 +143,7 @@ class BobDecryptionSessionInitializer @Inject constructor(
         if(initializationKeyBundle.bobOpk != null) {
             symmetricKey = generateSymmetricKeyWithOPK(
                 initializationKeyBundle.aliceIdentityKey,
-                initializationKeyBundle.aliceEphermalKey,
+                initializationKeyBundle.aliceEphemeralKey,
                 initializationKeyBundle.bobOpk,
                 initializationKeyBundle.bobSpk,
                 initializationKeyBundle.bobPrivateIdentityKey
@@ -147,7 +151,7 @@ class BobDecryptionSessionInitializer @Inject constructor(
         } else {
             symmetricKey = generateSymmetricKeyWithoutOPK(
                 initializationKeyBundle.aliceIdentityKey,
-                initializationKeyBundle.aliceEphermalKey,
+                initializationKeyBundle.aliceEphemeralKey,
                 initializationKeyBundle.bobSpk,
                 initializationKeyBundle.bobPrivateIdentityKey
             )
@@ -158,7 +162,7 @@ class BobDecryptionSessionInitializer @Inject constructor(
 
     class BobInitializationKeyBundle(
         val aliceIdentityKey: ByteArray,
-        val aliceEphermalKey: ByteArray,
+        val aliceEphemeralKey: ByteArray,
         val bobOpk: ByteArray? = null,
         val bobSpk: ByteArray,
         val bobPrivateIdentityKey: ByteArray,
@@ -169,10 +173,6 @@ class BobDecryptionSessionInitializer @Inject constructor(
         val symmetricKey: ByteArray,
         val ad: ByteArray
     )
-
-    private fun encode(byteArray: ByteArray): String {
-        return Base64.getEncoder().encodeToString(byteArray)
-    }
 
     private fun decode(string: String): ByteArray {
         return Base64.getDecoder().decode(string)
