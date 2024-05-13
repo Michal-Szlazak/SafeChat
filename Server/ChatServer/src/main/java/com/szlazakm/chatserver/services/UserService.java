@@ -1,6 +1,5 @@
 package com.szlazakm.chatserver.services;
 
-import com.szlazakm.chatserver.auth.SignatureVerifier;
 import com.szlazakm.chatserver.dtos.*;
 import com.szlazakm.chatserver.entities.OPK;
 import com.szlazakm.chatserver.entities.SPK;

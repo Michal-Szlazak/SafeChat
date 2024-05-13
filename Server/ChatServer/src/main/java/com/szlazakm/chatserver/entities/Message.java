@@ -23,9 +23,9 @@ public class Message {
     private String fromPhoneNumber;
     private String toPhoneNumber;
     private String cipher;
-    String aliceIdentityPublicKey;
-    String aliceEphemeralPublicKey;
-    Integer bobOpkId;
-    Integer bobSpkId;
+    private String aliceIdentityPublicKey;
+    private String aliceEphemeralPublicKey;
+    private Integer bobOpkId;
+    private Integer bobSpkId;
     private String timestamp;
 }
