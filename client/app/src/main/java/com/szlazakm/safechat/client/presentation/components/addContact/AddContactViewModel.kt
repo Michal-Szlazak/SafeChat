@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.szlazakm.safechat.client.data.repositories.ContactRepository
 import com.szlazakm.safechat.client.domain.Contact
-import com.szlazakm.safechat.client.presentation.States.AddContactState
+import com.szlazakm.safechat.client.presentation.states.AddContactState
 import com.szlazakm.safechat.webclient.dtos.UserDTO
 import com.szlazakm.safechat.webclient.webservices.UserWebService
 import dagger.hilt.android.lifecycle.HiltViewModel

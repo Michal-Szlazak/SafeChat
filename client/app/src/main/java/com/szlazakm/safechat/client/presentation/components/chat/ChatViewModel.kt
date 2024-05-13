@@ -12,7 +12,7 @@ import com.szlazakm.safechat.client.data.services.MessageSaverService
 import com.szlazakm.safechat.client.domain.Contact
 import com.szlazakm.safechat.client.domain.Message
 import com.szlazakm.safechat.client.presentation.events.ChatEvent
-import com.szlazakm.safechat.client.presentation.States.ChatState
+import com.szlazakm.safechat.client.presentation.states.ChatState
 import com.szlazakm.safechat.webclient.dtos.MessageDTO
 import com.szlazakm.safechat.webclient.dtos.MessageSentResponseDTO
 import com.szlazakm.safechat.webclient.webservices.ChatWebService
@@ -184,6 +184,14 @@ class ChatViewModel @Inject constructor(
     override fun onNewMessage(message: MessageEntity) {
 
         Log.d("ChatViewModel", "Received new message via listener: $message")
+
+        if(state.value.selectedContact == null) {
+            return
+        }
+
+        if(message.senderPhoneNumber != state.value.selectedContact!!.phoneNumber) {
+            return
+        }
 
         val textMessage = Message.TextMessage(
             content = message.content,

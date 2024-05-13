@@ -1,4 +1,4 @@
-package com.szlazakm.safechat.client.presentation.States
+package com.szlazakm.safechat.client.presentation.states
 
 import com.szlazakm.safechat.webclient.dtos.UserDTO
 

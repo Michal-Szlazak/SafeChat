@@ -1,4 +1,4 @@
-package com.szlazakm.safechat.client.presentation.States
+package com.szlazakm.safechat.client.presentation.states
 
 data class SignInState(
     val isUserCreated: Boolean = false,

@@ -93,7 +93,6 @@ class BobDecryptionSessionInitializer @Inject constructor(
         var bobOpk : ByteArray? = null
 
         if(encryptedMessage.bobOpkId != null) {
-            Log.e("BobDecryptionSessionInitializer", "Bob OPK ID is null.")
 
             val encodedBobOpk = (Dispatchers.IO) {
                 preKeyRepository.getOPKById(encryptedMessage.bobOpkId)

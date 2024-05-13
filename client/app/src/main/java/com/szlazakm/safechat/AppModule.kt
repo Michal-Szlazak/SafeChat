@@ -62,7 +62,8 @@ class AppModule {
     @Provides
     fun provideRetrofit(): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("http://192.168.0.230:8080")
+//            .baseUrl("http://192.168.0.230:8080") For PC
+            .baseUrl("http://10.67.43.127:8080")
             .addConverterFactory(JacksonConverterFactory.create())
             .build()
     }

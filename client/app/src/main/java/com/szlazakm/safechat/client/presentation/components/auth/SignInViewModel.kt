@@ -11,7 +11,7 @@ import com.szlazakm.safechat.client.data.services.MessageSaverManager
 import com.szlazakm.safechat.client.domain.Contact
 import com.szlazakm.safechat.client.domain.LocalUserData
 import com.szlazakm.safechat.client.presentation.ScreenRoutes
-import com.szlazakm.safechat.client.presentation.States.SignInState
+import com.szlazakm.safechat.client.presentation.states.SignInState
 import com.szlazakm.safechat.utils.auth.PreKeyManager
 import com.szlazakm.safechat.webclient.dtos.UserCreateDTO
 import com.szlazakm.safechat.webclient.dtos.VerifyPhoneNumberDTO

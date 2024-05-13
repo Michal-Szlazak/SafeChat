@@ -22,7 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.szlazakm.safechat.client.presentation.States.SignInState
 import androidx.compose.foundation.text.KeyboardOptions as KeyboardOptions1
 
 @Composable
