@@ -10,7 +10,7 @@ import com.szlazakm.safechat.client.data.entities.ContactEntity
 @Dao
 interface ContactDao {
     @Query("SELECT * FROM contact_entity ORDER BY firstName ASC")
-    fun getContacts(): LiveData<List<ContactEntity>>
+    fun getContacts(): List<ContactEntity>
 
     @Insert
     fun insertContact(contact: ContactEntity)

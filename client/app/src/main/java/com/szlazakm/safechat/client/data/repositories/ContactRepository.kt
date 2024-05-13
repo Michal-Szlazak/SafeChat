@@ -8,6 +8,7 @@ import com.szlazakm.safechat.client.data.entities.ContactEntity
 import com.szlazakm.safechat.client.data.entities.toContact
 import com.szlazakm.safechat.client.domain.Contact
 import com.szlazakm.safechat.client.domain.toContactEntity
+import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class ContactRepository @Inject constructor(context: Context) {
@@ -18,12 +19,9 @@ class ContactRepository @Inject constructor(context: Context) {
     ).fallbackToDestructiveMigration()
         .build()
 
-    val allContacts: LiveData<List<ContactEntity>> = database.contactDao().getContacts()
-
-//    fun getContacts(): LiveData<List<Contact>> {
-//        // TODO: not implemented yet
-//        return allContacts
-//    }
+    fun getAllContacts(): List<Contact> {
+        return database.contactDao().getContacts().map { it.toContact() }
+    }
 
     fun getContact(phoneNumber: String) : Contact?{
         return database.contactDao().getContact(phoneNumber)?.toContact()

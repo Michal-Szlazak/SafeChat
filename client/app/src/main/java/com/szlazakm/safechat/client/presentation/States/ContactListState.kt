@@ -5,7 +5,7 @@ import com.szlazakm.safechat.client.data.entities.ContactEntity
 import com.szlazakm.safechat.client.domain.Contact
 
 data class ContactListState(
-    val contacts: LiveData<List<ContactEntity>>? = null,
+    val contacts: List<Contact> = emptyList(),
     val recentlyActiveContacts: List<Contact> = emptyList(),
     val selectedContact: Contact? = null
 )

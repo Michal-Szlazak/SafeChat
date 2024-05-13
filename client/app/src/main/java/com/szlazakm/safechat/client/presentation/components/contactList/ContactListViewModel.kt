@@ -14,6 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.invoke
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -30,14 +31,12 @@ class ContactListViewModel @Inject constructor(
     fun loadContactList() {
         viewModelScope.launch {
 
-            val contacts = withContext(Dispatchers.IO) {
-                contactRepository.allContacts
+            (Dispatchers.IO) {
+
+                _state.value = _state.value.copy(
+                    contacts = contactRepository.getAllContacts()
+                )
             }
-
-            _state.value = _state.value.copy(
-                contacts = contactRepository.allContacts,
-            )
-
         }
     }
 

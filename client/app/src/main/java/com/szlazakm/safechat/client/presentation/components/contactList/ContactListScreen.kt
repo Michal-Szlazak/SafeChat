@@ -1,5 +1,6 @@
 package com.szlazakm.safechat.client.presentation.components.contactList
 
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -40,14 +41,6 @@ fun ContactListScreen(
 
     val state by viewModel.state.collectAsState()
 
-    val contactsState = remember { mutableStateOf<List<ContactEntity>?>(null) }
-
-    LaunchedEffect(state.contacts) {
-        contactsState.value = state.contacts?.value
-    }
-
-    val contactEntities = contactsState.value
-    val contacts = contactEntities?.map { c -> c.toContact() }
 
     Scaffold(
         floatingActionButton = {
@@ -75,30 +68,28 @@ fun ContactListScreen(
 
             item {
                 Text(
-                    text = "My contacts (${state.contacts?.value?.size})",
+                    text = "My contacts (${state.contacts.size})",
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
                     fontWeight = FontWeight.Bold
                 )
             }
+            items(state.contacts) { contact ->
+                ContactListItem(
+                    contact = contact,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            viewModel.onEvent(ContactListEvent.OnConversationClick(contact))
+                            chatViewModel.setContact(contact)
+                            navController.navigate(
+                                ScreenRoutes.Chat.route.replace("{phoneNumber}", contact.phoneNumber)
+                            )
+                        }
+                        .padding(horizontal = 16.dp)
+                )
 
-            if(contacts != null) {
-                items(contacts) { contact ->
-                    ContactListItem(
-                        contact = contact,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                viewModel.onEvent(ContactListEvent.OnConversationClick(contact))
-                                chatViewModel.setContact(contact)
-                                navController.navigate(
-                                    ScreenRoutes.Chat.route.replace("{phoneNumber}", contact.phoneNumber)
-                                )
-                            }
-                            .padding(horizontal = 16.dp)
-                    )
-                }
             }
         }
     }
