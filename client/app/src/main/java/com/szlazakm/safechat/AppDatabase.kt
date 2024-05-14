@@ -26,7 +26,7 @@ import com.szlazakm.safechat.client.data.entities.UserEntity
         SPKEntity::class,
         EncryptionSessionEntity::class
                ],
-    version = 12
+    version = 13
 )
 @TypeConverters(LocalDateTimeConverter::class)
 abstract class AppDatabase : RoomDatabase() {

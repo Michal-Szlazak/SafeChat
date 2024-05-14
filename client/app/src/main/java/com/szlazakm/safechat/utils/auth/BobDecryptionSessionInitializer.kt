@@ -87,10 +87,8 @@ class BobDecryptionSessionInitializer @Inject constructor(
             preKeyRepository.getSPKById(encryptedMessage.bobSpkId)
         }.privateKey
 
-        val normalizedIdentityKeyPair = decode(localUser.identityKeyPair)
-        val identityKeyPair = IdentityKeyPair(normalizedIdentityKeyPair)
-        val bobPrivateIdentityKey = (identityKeyPair.privateKey as DjbECPrivateKey).privateKey
-        val bobPublicIdentityKey = (identityKeyPair.publicKey.publicKey as DjbECPublicKey).publicKey
+        val bobPrivateIdentityKey = decode(localUser.privateIdentityKey)
+        val bobPublicIdentityKey = decode(localUser.publicIdentityKey)
 
         return BobInitializationKeyBundle(
             decode(aliceIdentityKey),

@@ -3,10 +3,14 @@ package com.szlazakm.safechat.client.data.services
 import com.szlazakm.safechat.client.data.entities.OPKEntity
 import com.szlazakm.safechat.client.data.entities.SPKEntity
 import com.szlazakm.safechat.client.data.repositories.PreKeyRepository
+import com.szlazakm.safechat.utils.auth.ecc.EccOpk
+import com.szlazakm.safechat.utils.auth.ecc.EccSignedKeyPair
 import org.whispersystems.libsignal.ecc.DjbECPrivateKey
 import org.whispersystems.libsignal.ecc.DjbECPublicKey
+import org.whispersystems.libsignal.ecc.ECKeyPair
 import org.whispersystems.libsignal.state.PreKeyRecord
 import org.whispersystems.libsignal.state.SignedPreKeyRecord
+import java.sql.Timestamp
 import java.util.Base64
 
 class PreKeyService(
@@ -35,29 +39,28 @@ class PreKeyService(
         }
     }
 
-    fun createNewOPKs(newOpks: List<PreKeyRecord>) {
+    fun createNewOPKs(newOpks: List<EccOpk>) {
 
         val opkEntities = newOpks.map { opk ->
             OPKEntity(
                 id = opk.id,
-                publicOPK = encode((opk.keyPair.publicKey as DjbECPublicKey).publicKey),
-                privateOPK = encode((opk.keyPair.privateKey as DjbECPrivateKey).privateKey)
+//                publicOPK = encode((opk.keyPair.publicKey as DjbECPublicKey).publicKey),
+//                privateOPK = encode((opk.keyPair.privateKey as DjbECPrivateKey).privateKey)
+                publicOPK = encode(opk.publicKey),
+                privateOPK = encode(opk.privateKey)
             )
         }
 
         opkEntities.forEach(preKeyRepository::createOPK)
     }
 
-    fun createNewSPK(signedPreKey: SignedPreKeyRecord) {
-
-        val publicSignedPreKey = signedPreKey.keyPair.publicKey as DjbECPublicKey
-        val privateSignedPreKey = signedPreKey.keyPair.privateKey as DjbECPrivateKey
+    fun createNewSPK(spk: EccSignedKeyPair) {
 
         val spkEntity = SPKEntity(
-            id = signedPreKey.id,
-            publicKey = encode(publicSignedPreKey.publicKey),
-            privateKey = encode(privateSignedPreKey.privateKey),
-            timestamp = signedPreKey.timestamp
+            id = spk.id,
+            publicKey = encode(spk.publicKey),
+            privateKey = encode(spk.privateKey),
+            timestamp = spk.timestamp
         )
 
         preKeyRepository.createSPK(spkEntity)

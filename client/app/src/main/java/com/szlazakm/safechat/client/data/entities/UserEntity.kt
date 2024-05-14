@@ -11,5 +11,6 @@ data class UserEntity(
     val firstName: String,
     val lastName: String,
     val createdAt: Date,
-    val identityKeyPair: String
+    val publicIdentityKey: String,
+    val privateIdentityKey: String
 )

@@ -3,17 +3,13 @@ package com.szlazakm.safechat.utils.auth
 import android.util.Log
 import com.szlazakm.safechat.client.data.entities.UserEntity
 import com.szlazakm.safechat.client.data.repositories.UserRepository
+import com.szlazakm.safechat.utils.auth.ecc.EccKeyHelper
 import com.szlazakm.safechat.webclient.dtos.KeyBundleDTO
 import com.szlazakm.safechat.webclient.webservices.UserWebService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.whispersystems.curve25519.Curve25519
 import org.whispersystems.curve25519.Curve25519.BEST
-import org.whispersystems.libsignal.IdentityKeyPair
-import org.whispersystems.libsignal.ecc.DjbECPrivateKey
-import org.whispersystems.libsignal.ecc.DjbECPublicKey
-import org.whispersystems.libsignal.ecc.ECPublicKey
-import org.whispersystems.libsignal.util.KeyHelper
 import java.util.Base64
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -23,8 +19,6 @@ class AliceEncryptionSessionInitializer @Inject constructor(
     private val userWebService: UserWebService,
     private val userRepository: UserRepository
 ){
-
-    private val SIGNATURE_LENGTH = 64
     private val diffieHellman = DiffieHellman()
 
     private fun getKeyBundleForUser(phoneNumber: String) : KeyBundleDTO? {
@@ -79,11 +73,6 @@ class AliceEncryptionSessionInitializer @Inject constructor(
 
             val initializationKeyBundle = initializeKeyBundle(keyBundleDTO, user)
 
-            if (initializationKeyBundle == null) {
-                Log.e("EncryptionSessionManager", "Failed to initialize key bundle.")
-                return@withContext null
-            }
-
             val symmetricKey = generateSymmetricKey(initializationKeyBundle)
             val derivedKeys = KDF.calculateDerivedKeys(symmetricKey)
 
@@ -96,7 +85,7 @@ class AliceEncryptionSessionInitializer @Inject constructor(
         }
     }
 
-    private fun initializeKeyBundle(keyBundleDTO: KeyBundleDTO, localUser: UserEntity): InitializationKeyBundle? {
+    private fun initializeKeyBundle(keyBundleDTO: KeyBundleDTO, localUser: UserEntity): InitializationKeyBundle {
         val bobIdentityKey = keyBundleDTO.identityKey
         val bobSignedPreKey = keyBundleDTO.signedPreKey
         var bobOpk : ByteArray? = null
@@ -106,13 +95,10 @@ class AliceEncryptionSessionInitializer @Inject constructor(
             bobOpk = decode(keyBundleDTO.onetimePreKey)
         }
 
-        val aliceEphemeralKeyPair = KeyHelper.generateSenderSigningKey()
-        val aliceEphemeralPrivateKey = (aliceEphemeralKeyPair.privateKey as DjbECPrivateKey).privateKey
-        val aliceEphemeralPublicKey = (aliceEphemeralKeyPair.publicKey as DjbECPublicKey).publicKey
-
-        val normalizedIdentityKeyPair = decode(localUser.identityKeyPair)
-        val identityKeyPair = IdentityKeyPair(normalizedIdentityKeyPair)
-        val alicePrivateIdentityKey = (identityKeyPair.privateKey as DjbECPrivateKey).privateKey
+        val aliceEphemeralKeyPair = EccKeyHelper.generateSenderKeyPair()
+        val aliceEphemeralPrivateKey = aliceEphemeralKeyPair.privateKey
+        val aliceEphemeralPublicKey = aliceEphemeralKeyPair.publicKey
+        val alicePrivateIdentityKey = decode(localUser.privateIdentityKey)
 
         return InitializationKeyBundle(
             decode(bobIdentityKey),
@@ -157,9 +143,7 @@ class AliceEncryptionSessionInitializer @Inject constructor(
         symmetricKey: ByteArray
     ): InitialMessageEncryptionBundle {
 
-        val normalizedIdentityKeyPair = decode(localUser.identityKeyPair)
-        val identityKeyPair = IdentityKeyPair(normalizedIdentityKeyPair)
-        val alicePublicIdentityKey = (identityKeyPair.publicKey.publicKey as DjbECPublicKey).publicKey
+        val alicePublicIdentityKey = decode(localUser.publicIdentityKey)
         val ad = alicePublicIdentityKey + decode(keyBundleDTO.identityKey)
 
         return InitialMessageEncryptionBundle(

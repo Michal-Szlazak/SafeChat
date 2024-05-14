@@ -92,16 +92,12 @@ class SignInViewModel @Inject constructor(
 
         val keyPair = preKeyManager.generateIdentityKeys()
 
-        if(keyPair == null || keyPair.publicKey == null || keyPair.privateKey == null) {
-            Log.e("SignInViewModel", "Failed to generate key pair.")
-            return
-        }
-
         val userCreateDTO = UserCreateDTO(
             firstName = state.value.firstName,
             lastName = state.value.lastName,
             phoneNumber = state.value.phoneNumber,
-            identityKey = encode((keyPair.publicKey.publicKey as DjbECPublicKey).publicKey),
+//            identityKey = encode((keyPair.publicKey.publicKey as DjbECPublicKey).publicKey),
+            identityKey = encode(keyPair.publicKey),
             pin = state.value.pin
         )
 
@@ -118,7 +114,9 @@ class SignInViewModel @Inject constructor(
                         firstName = state.value.firstName,
                         lastName = state.value.lastName,
                         createdAt = Date(),
-                        identityKeyPair = encode(keyPair.serialize())
+//                        identityKeyPair = encode(keyPair.serialize())
+                        publicIdentityKey = encode(keyPair.publicKey),
+                        privateIdentityKey = encode(keyPair.privateKey)
                     )
 
                     val localUserContact = Contact(
