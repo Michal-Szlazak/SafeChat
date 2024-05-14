@@ -94,6 +94,15 @@ class PreKeyManager @Inject constructor(
 
         val publicSignedPrekey = signedPreKeys.keyPair.publicKey as DjbECPublicKey
 
+        //Small test
+        Log.d("PreKeyManager", "Public signed pre key: ${encode(publicSignedPrekey.publicKey)}")
+        val serializedSignedKey = signedPreKeys.serialize()
+        val message = serializedSignedKey.copyOfRange(0, serializedSignedKey.size - 64)
+        val signature = serializedSignedKey.copyOfRange(serializedSignedKey.size - 64, serializedSignedKey.size)
+        Log.d("PreKeyManager", "Serialized signed key: ${encode(serializedSignedKey)}")
+        Log.d("PreKeyManager", "Signature: ${encode(signature)}")
+        Log.d("PreKeyManager", "Message: ${encode(message)}")
+
         val spkCreateDTO = SPKCreateDTO(
             phoneNumber = localUser.phoneNumber,
             id = signedPreKeys.id,

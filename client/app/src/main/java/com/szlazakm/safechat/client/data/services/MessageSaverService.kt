@@ -45,9 +45,14 @@ class MessageSaverService : Service(){
     private val serviceScope = CoroutineScope(Dispatchers.Default)
 
     private var messageListener: MessageListener? = null
+    private var contactListener: ContactListener? = null
 
     fun setMessageListener(listener: MessageListener) {
         messageListener = listener
+    }
+
+    fun setContactListener(listener: ContactListener) {
+        contactListener = listener
     }
 
     companion object {
@@ -89,17 +94,28 @@ class MessageSaverService : Service(){
                 "LocalUser is not created yet. Aborting MessageServiceCreation."
             )
             return
-        } else {
-            Log.d(
-                "MessageSaverService",
-                "LocalUser is found. Loading MessageServiceCreation."
-            )
         }
 
 
         val newMessages = getNewMessages(localUser.phoneNumber)
+        loadNewMessagesFromDB(newMessages ?: emptyList())
 
-        newMessages?.forEach{
+        stompService.connect()
+        stompService.subscribeToTopic("/user/queue/${localUser.phoneNumber}") { message ->
+
+            Log.d("MessageSaverService","received a message $message")
+
+            serviceScope.launch {
+                val outputEncryptedMessageDTO = gson.fromJson(message, OutputEncryptedMessageDTO::class.java)
+                handleNewMessage(outputEncryptedMessageDTO)
+            }
+
+        }
+    }
+
+    private suspend fun loadNewMessagesFromDB(messages: List<OutputEncryptedMessageDTO>) {
+
+        messages.forEach{
             withContext(Dispatchers.IO) {
                 val decryptedMessage = decryptMessage(it)
 
@@ -119,38 +135,28 @@ class MessageSaverService : Service(){
                 saveNewMessage(decryptedMessage)
             }
         }
+    }
 
+    private suspend fun handleNewMessage(outputEncryptedMessageDTO: OutputEncryptedMessageDTO) {
+        val decryptedMessage = decryptMessage(outputEncryptedMessageDTO)
 
-        stompService.connect()
-        stompService.subscribeToTopic("/user/queue/${localUser.phoneNumber}") { message ->
-
-            Log.d("MessageSaverService","received a message $message")
-
-            serviceScope.launch {
-
-                val outputEncryptedMessageDTO = gson.fromJson(message, OutputEncryptedMessageDTO::class.java)
-                val decryptedMessage = decryptMessage(outputEncryptedMessageDTO)
-
-                if(decryptedMessage == null) {
-                    Log.e(
-                        "MessageSaverService",
-                        "Failed to decrypt message from: ${outputEncryptedMessageDTO.from}"
-                    )
-                    return@launch
-                } else{
-                    Log.d(
-                        "MessageSaverService",
-                        "Successfully decrypted message from: ${outputEncryptedMessageDTO.from}" +
-                                " message: $decryptedMessage")
-                }
-
-                messageListener?.onNewMessage(decryptedMessage)
-
-                saveNewMessage(decryptedMessage)
-                acknowledgeMessage(MessageAcknowledgementDTO(outputEncryptedMessageDTO.id))
-            }
-
+        if(decryptedMessage == null) {
+            Log.e(
+                "MessageSaverService",
+                "Failed to decrypt message from: ${outputEncryptedMessageDTO.from}"
+            )
+            return
+        } else{
+            Log.d(
+                "MessageSaverService",
+                "Successfully decrypted message from: ${outputEncryptedMessageDTO.from}" +
+                        " message: $decryptedMessage")
         }
+
+        messageListener?.onNewMessage(decryptedMessage)
+
+        saveNewMessage(decryptedMessage)
+        acknowledgeMessage(MessageAcknowledgementDTO(outputEncryptedMessageDTO.id))
     }
 
     private suspend fun createNewContact(decryptedMessage: MessageEntity) {
@@ -174,6 +180,7 @@ class MessageSaverService : Service(){
         )
 
         contactRepository.createContact(newContact)
+        contactListener?.onNewContact(newContact)
 
         Log.d(
             "MessageSaverService",

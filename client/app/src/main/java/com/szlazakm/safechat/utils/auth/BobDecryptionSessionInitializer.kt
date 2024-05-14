@@ -4,6 +4,7 @@ import android.util.Log
 import com.szlazakm.safechat.client.data.entities.UserEntity
 import com.szlazakm.safechat.client.data.repositories.PreKeyRepository
 import com.szlazakm.safechat.client.data.repositories.UserRepository
+import com.szlazakm.safechat.client.domain.LocalUserData
 import com.szlazakm.safechat.webclient.dtos.OutputEncryptedMessageDTO
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.invoke
@@ -51,40 +52,6 @@ class BobDecryptionSessionInitializer @Inject constructor(
                 ad
             )
         }
-    }
-
-    private fun generateSymmetricKeyWithOPK(
-        aliceIdentityKey: ByteArray,
-        aliceEphemeralKey: ByteArray,
-        bobOpk: ByteArray,
-        bobSpk: ByteArray,
-        bobPrivateIdentityKey: ByteArray
-    ) : ByteArray{
-
-        val dh1 = diffieHellman.createSharedSecret(bobSpk, aliceIdentityKey)
-        val dh2 = diffieHellman.createSharedSecret(bobPrivateIdentityKey, aliceEphemeralKey)
-        val dh3 = diffieHellman.createSharedSecret(bobSpk, aliceEphemeralKey)
-        val dh4 = diffieHellman.createSharedSecret(bobOpk, aliceEphemeralKey)
-
-        Log.d("BobDecryptionSessionInitializer", "DH1: ${Base64.getEncoder().encodeToString(dh1)}")
-        Log.d("BobDecryptionSessionInitializer", "DH2: ${Base64.getEncoder().encodeToString(dh2)}")
-        Log.d("BobDecryptionSessionInitializer", "DH3: ${Base64.getEncoder().encodeToString(dh3)}")
-        Log.d("BobDecryptionSessionInitializer", "DH4: ${Base64.getEncoder().encodeToString(dh4)}")
-
-        return dh1 + dh2 + dh3 + dh4
-    }
-
-    private fun generateSymmetricKeyWithoutOPK(
-        aliceIdentityKey: ByteArray,
-        aliceEphermalKey: ByteArray,
-        bobSpk: ByteArray,
-        bobPrivateIdentityKey: ByteArray
-    ) : ByteArray{
-
-        val dh1 = diffieHellman.createSharedSecret(bobSpk, aliceIdentityKey)
-        val dh2 = diffieHellman.createSharedSecret(bobPrivateIdentityKey, aliceEphermalKey)
-        val dh3 = diffieHellman.createSharedSecret(bobSpk, aliceEphermalKey)
-        return dh1 + dh2 + dh3
     }
 
     private suspend fun initializeKeyBundle(encryptedMessage: OutputEncryptedMessageDTO, localUser: UserEntity): BobInitializationKeyBundle? {
@@ -137,26 +104,19 @@ class BobDecryptionSessionInitializer @Inject constructor(
 
     private fun generateSymmetricKey(initializationKeyBundle: BobInitializationKeyBundle) : ByteArray {
 
-        val symmetricKey: ByteArray
+        val aliceIdentityKey = initializationKeyBundle.aliceIdentityKey
+        val aliceEphemeralKey = initializationKeyBundle.aliceEphemeralKey
+        val bobOpk = initializationKeyBundle.bobOpk
+        val bobSpk = initializationKeyBundle.bobSpk
+        val bobPrivateIdentityKey = initializationKeyBundle.bobPrivateIdentityKey
 
-        if(initializationKeyBundle.bobOpk != null) {
-            symmetricKey = generateSymmetricKeyWithOPK(
-                initializationKeyBundle.aliceIdentityKey,
-                initializationKeyBundle.aliceEphemeralKey,
-                initializationKeyBundle.bobOpk,
-                initializationKeyBundle.bobSpk,
-                initializationKeyBundle.bobPrivateIdentityKey
-            )
-        } else {
-            symmetricKey = generateSymmetricKeyWithoutOPK(
-                initializationKeyBundle.aliceIdentityKey,
-                initializationKeyBundle.aliceEphemeralKey,
-                initializationKeyBundle.bobSpk,
-                initializationKeyBundle.bobPrivateIdentityKey
-            )
-        }
+        val dh1 = diffieHellman.createSharedSecret(bobSpk, aliceIdentityKey)
+        val dh2 = diffieHellman.createSharedSecret(bobPrivateIdentityKey, aliceEphemeralKey)
+        val dh3 = diffieHellman.createSharedSecret(bobSpk, aliceEphemeralKey)
+        val dh4 = if (bobOpk != null) diffieHellman.createSharedSecret(bobOpk, aliceEphemeralKey) else byteArrayOf()
 
-        return symmetricKey
+        return dh1 + dh2 + dh3 + dh4
+
     }
 
     class BobInitializationKeyBundle(

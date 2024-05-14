@@ -5,7 +5,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.szlazakm.safechat.client.data.entities.ContactEntity
 import com.szlazakm.safechat.client.data.repositories.ContactRepository
+import com.szlazakm.safechat.client.data.services.ContactListener
+import com.szlazakm.safechat.client.data.services.MessageSaverService
 import com.szlazakm.safechat.client.domain.Contact
 import com.szlazakm.safechat.client.presentation.events.ContactListEvent
 import com.szlazakm.safechat.client.presentation.states.ContactListState
@@ -21,13 +24,17 @@ import javax.inject.Inject
 @HiltViewModel
 class ContactListViewModel @Inject constructor(
     private val contactRepository: ContactRepository
-): ViewModel() {
+): ViewModel(), ContactListener {
 
     private val _state = MutableStateFlow(ContactListState())
     val state: StateFlow<ContactListState> = _state
 
 
     fun loadContactList() {
+
+        val messageSaverService = MessageSaverService.getInstance()
+        messageSaverService?.setContactListener(this)
+
         viewModelScope.launch {
 
             (Dispatchers.IO) {
@@ -62,5 +69,12 @@ class ContactListViewModel @Inject constructor(
                 )
             }
         }
+    }
+
+    override fun onNewContact(contact: Contact) {
+
+        _state.update { it.copy(
+            contacts = it.contacts + contact
+        ) }
     }
 }

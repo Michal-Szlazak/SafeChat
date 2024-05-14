@@ -47,11 +47,10 @@ public class ChatController {
         OutputEncryptedMessageDTO out;
 
         Log.d("ChatController", "Encrypted message: " + msg);
-        System.out.println(msg);
         if(msg.isInitial()) {
             out = new OutputEncryptedMessageDTO(
                     messageId,
-                    msg.isInitial(),
+                    true,
                     msg.getFrom(),
                     msg.getTo(),
                     msg.getCipher(),
@@ -64,7 +63,7 @@ public class ChatController {
         } else {
             out = new OutputEncryptedMessageDTO(
                     messageId,
-                    msg.isInitial(),
+                    false,
                     msg.getFrom(),
                     msg.getTo(),
                     msg.getCipher(),

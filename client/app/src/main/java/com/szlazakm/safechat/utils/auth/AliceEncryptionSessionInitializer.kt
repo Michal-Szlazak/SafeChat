@@ -7,9 +7,12 @@ import com.szlazakm.safechat.webclient.dtos.KeyBundleDTO
 import com.szlazakm.safechat.webclient.webservices.UserWebService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.whispersystems.curve25519.Curve25519
+import org.whispersystems.curve25519.Curve25519.BEST
 import org.whispersystems.libsignal.IdentityKeyPair
 import org.whispersystems.libsignal.ecc.DjbECPrivateKey
 import org.whispersystems.libsignal.ecc.DjbECPublicKey
+import org.whispersystems.libsignal.ecc.ECPublicKey
 import org.whispersystems.libsignal.util.KeyHelper
 import java.util.Base64
 import javax.inject.Inject
@@ -21,10 +24,10 @@ class AliceEncryptionSessionInitializer @Inject constructor(
     private val userRepository: UserRepository
 ){
 
+    private val SIGNATURE_LENGTH = 64
     private val diffieHellman = DiffieHellman()
 
     private fun getKeyBundleForUser(phoneNumber: String) : KeyBundleDTO? {
-
 
         try {
 
@@ -33,7 +36,6 @@ class AliceEncryptionSessionInitializer @Inject constructor(
             if(response.isSuccessful) {
 
                 Log.d("EncryptionSessionInitializer", "Successfully received key bundle.")
-
                 return response.body()
             } else {
                 Log.e("EncryptionSessionInitializer", "Failed to receive key bundle.")
@@ -53,11 +55,22 @@ class AliceEncryptionSessionInitializer @Inject constructor(
             val keyBundleDTO = getKeyBundleForUser(phoneNumber)
 
             if (keyBundleDTO == null) {
-                Log.e("EncryptionSessionManager", "Failed to get key bundle for phone: $phoneNumber")
+                Log.e(
+                    "EncryptionSessionManager",
+                    "Failed to get key bundle for phone: $phoneNumber"
+                )
                 return@withContext null
             }
 
-            //TODO verify the signature
+            val signingKey = decode(keyBundleDTO.identityKey)
+            val message = decode(keyBundleDTO.signedPreKey)
+            val signature = decode(keyBundleDTO.signature)
+
+            if(!verifySignature(signingKey, message, signature)) {
+                Log.e("EncryptionSessionManager", "Signature verification failed.")
+                return@withContext null
+            }
+
             val user = userRepository.getLocalUser()
             if (user == null) {
                 Log.e("EncryptionSessionManager", "Failed to get local user.")
@@ -66,7 +79,7 @@ class AliceEncryptionSessionInitializer @Inject constructor(
 
             val initializationKeyBundle = initializeKeyBundle(keyBundleDTO, user)
 
-            if(initializationKeyBundle == null) {
+            if (initializationKeyBundle == null) {
                 Log.e("EncryptionSessionManager", "Failed to initialize key bundle.")
                 return@withContext null
             }
@@ -81,35 +94,6 @@ class AliceEncryptionSessionInitializer @Inject constructor(
                 derivedKeys.rootKey.keyBytes
             )
         }
-    }
-
-    private fun generateSymmetricKeyWithOPK(
-        bobIdentityKey: ByteArray,
-        bobSignedPreKey: ByteArray,
-        bobOpk: ByteArray,
-        alicePrivateIdentityKey: ByteArray,
-        aliceEphemeralPrivateKey: ByteArray
-    ) : ByteArray{
-
-        val dh1 = diffieHellman.createSharedSecret(alicePrivateIdentityKey, bobSignedPreKey)
-        val dh2 = diffieHellman.createSharedSecret(aliceEphemeralPrivateKey, bobIdentityKey)
-        val dh3 = diffieHellman.createSharedSecret(aliceEphemeralPrivateKey, bobSignedPreKey)
-        val dh4 = diffieHellman.createSharedSecret(aliceEphemeralPrivateKey, bobOpk)
-
-        return dh1 + dh2 + dh3 + dh4
-    }
-
-    private fun generateSymmetricKeyWithoutOPK(
-        bobIdentityKey: ByteArray,
-        bobSignedPreKey: ByteArray,
-        alicePrivateIdentityKey: ByteArray,
-        aliceEphemeralPrivateKey: ByteArray
-    ) : ByteArray{
-
-        val dh1 = diffieHellman.createSharedSecret(alicePrivateIdentityKey, bobSignedPreKey)
-        val dh2 = diffieHellman.createSharedSecret(aliceEphemeralPrivateKey, bobIdentityKey)
-        val dh3 = diffieHellman.createSharedSecret(aliceEphemeralPrivateKey, bobSignedPreKey)
-        return dh1 + dh2 + dh3
     }
 
     private fun initializeKeyBundle(keyBundleDTO: KeyBundleDTO, localUser: UserEntity): InitializationKeyBundle? {
@@ -142,26 +126,19 @@ class AliceEncryptionSessionInitializer @Inject constructor(
 
     private fun generateSymmetricKey(initializationKeyBundle: InitializationKeyBundle) : ByteArray {
 
-        val symmetricKey: ByteArray
+        val bobIdentityKey = initializationKeyBundle.bobIdentityKey
+        val bobSignedPreKey = initializationKeyBundle.bobSignedPreKey
+        val bobOpk = initializationKeyBundle.bobOpk
+        val alicePrivateIdentityKey = initializationKeyBundle.alicePrivateIdentityKey
+        val aliceEphemeralPrivateKey = initializationKeyBundle.aliceEphemeralPrivateKey
 
-        if(initializationKeyBundle.bobOpk != null) {
-            symmetricKey = generateSymmetricKeyWithOPK(
-                initializationKeyBundle.bobIdentityKey,
-                initializationKeyBundle.bobSignedPreKey,
-                initializationKeyBundle.bobOpk,
-                initializationKeyBundle.alicePrivateIdentityKey,
-                initializationKeyBundle.aliceEphemeralPrivateKey
-            )
-        } else {
-            symmetricKey = generateSymmetricKeyWithoutOPK(
-                initializationKeyBundle.bobIdentityKey,
-                initializationKeyBundle.bobSignedPreKey,
-                initializationKeyBundle.alicePrivateIdentityKey,
-                initializationKeyBundle.aliceEphemeralPrivateKey
-            )
-        }
+        val dh1 = diffieHellman.createSharedSecret(alicePrivateIdentityKey, bobSignedPreKey)
+        val dh2 = diffieHellman.createSharedSecret(aliceEphemeralPrivateKey, bobIdentityKey)
+        val dh3 = diffieHellman.createSharedSecret(aliceEphemeralPrivateKey, bobSignedPreKey)
 
-        return symmetricKey
+        val dh4 = if (bobOpk != null) diffieHellman.createSharedSecret(aliceEphemeralPrivateKey, bobOpk) else byteArrayOf()
+
+        return dh1 + dh2 + dh3 + dh4
     }
 
     class InitializationKeyBundle(
@@ -194,6 +171,11 @@ class AliceEncryptionSessionInitializer @Inject constructor(
             ad
         )
 
+    }
+
+    private fun verifySignature(signingKey: ByteArray, message: ByteArray, signature: ByteArray) : Boolean{
+
+        return Curve25519.getInstance(BEST).verifySignature(signingKey, message, signature)
     }
 
     class InitialMessageEncryptionBundle(
