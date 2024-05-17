@@ -7,6 +7,13 @@ import androidx.room.PrimaryKey
 data class EncryptionSessionEntity(
     @PrimaryKey(autoGenerate = false)
     val phoneNumber: String,
-    val symmetricKey: String,
+    val rootKey: String,
+    val sendingChainKey: String,
+    val ourPublicRatchetKey: String,
+    val ourPrivateRatchetKey: String,
+    val receivingChainKey: String,
+    val theirRatchetKey: String,
+    var messageNumber: Int,
+    val previousChainLength: Int,
     val ad: String
 )

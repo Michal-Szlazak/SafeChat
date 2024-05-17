@@ -22,8 +22,6 @@ class BobDecryptionSessionInitializer @Inject constructor(
     private val preKeyRepository: PreKeyRepository
 ) {
 
-    private val diffieHellman = DiffieHellman()
-
     suspend fun createSymmetricKey(encryptedMessage: OutputEncryptedMessageDTO) : BobInitializeSessionBundle? {
 
         return withContext(Dispatchers.IO) {
@@ -43,12 +41,13 @@ class BobDecryptionSessionInitializer @Inject constructor(
             }
 
             val symmetricKey = generateSymmetricKey(initializationKeyBundle)
-            val derivedKeys = KDF.calculateDerivedKeys(symmetricKey)
+            val ratchetKeyPair = KDF.calculateDerivedKeys(symmetricKey)
+
 
             val ad = initializationKeyBundle.aliceIdentityKey + initializationKeyBundle.bobPublicIdentityKey
 
             BobInitializeSessionBundle(
-                derivedKeys.rootKey.keyBytes,
+                ratchetKeyPair.rootKey.key,
                 ad
             )
         }
@@ -108,10 +107,10 @@ class BobDecryptionSessionInitializer @Inject constructor(
         val bobSpk = initializationKeyBundle.bobSpk
         val bobPrivateIdentityKey = initializationKeyBundle.bobPrivateIdentityKey
 
-        val dh1 = diffieHellman.createSharedSecret(bobSpk, aliceIdentityKey)
-        val dh2 = diffieHellman.createSharedSecret(bobPrivateIdentityKey, aliceEphemeralKey)
-        val dh3 = diffieHellman.createSharedSecret(bobSpk, aliceEphemeralKey)
-        val dh4 = if (bobOpk != null) diffieHellman.createSharedSecret(bobOpk, aliceEphemeralKey) else byteArrayOf()
+        val dh1 = DiffieHellman.createSharedSecret(bobSpk, aliceIdentityKey)
+        val dh2 = DiffieHellman.createSharedSecret(bobPrivateIdentityKey, aliceEphemeralKey)
+        val dh3 = DiffieHellman.createSharedSecret(bobSpk, aliceEphemeralKey)
+        val dh4 = if (bobOpk != null) DiffieHellman.createSharedSecret(bobOpk, aliceEphemeralKey) else byteArrayOf()
 
         return dh1 + dh2 + dh3 + dh4
 

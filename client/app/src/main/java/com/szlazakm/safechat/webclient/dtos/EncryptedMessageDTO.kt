@@ -8,5 +8,8 @@ data class EncryptedMessageDTO (
     val aliceIdentityPublicKey: String?,
     val aliceEphemeralPublicKey: String?,
     val bobOpkId: Int?,
-    val bobSpkId: Int?
+    val bobSpkId: Int?,
+    val currentChainKey: String,
+    val messageNumber: Int,
+    val previousChainLength: Int
 )

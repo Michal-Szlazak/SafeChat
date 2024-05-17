@@ -4,6 +4,9 @@ import android.util.Log
 import com.szlazakm.safechat.client.data.entities.UserEntity
 import com.szlazakm.safechat.client.data.repositories.UserRepository
 import com.szlazakm.safechat.utils.auth.ecc.EccKeyHelper
+import com.szlazakm.safechat.utils.auth.rachet.ChainKey
+import com.szlazakm.safechat.utils.auth.rachet.KeyPair
+import com.szlazakm.safechat.utils.auth.rachet.RatchetSession
 import com.szlazakm.safechat.webclient.dtos.KeyBundleDTO
 import com.szlazakm.safechat.webclient.webservices.UserWebService
 import kotlinx.coroutines.Dispatchers
@@ -19,7 +22,6 @@ class AliceEncryptionSessionInitializer @Inject constructor(
     private val userWebService: UserWebService,
     private val userRepository: UserRepository
 ){
-    private val diffieHellman = DiffieHellman()
 
     private fun getKeyBundleForUser(phoneNumber: String) : KeyBundleDTO? {
 
@@ -72,17 +74,49 @@ class AliceEncryptionSessionInitializer @Inject constructor(
             }
 
             val initializationKeyBundle = initializeKeyBundle(keyBundleDTO, user)
+            val ratchetSession = initializeRatchetSession(initializationKeyBundle)
 
+            //TODO implement double ratchet
             val symmetricKey = generateSymmetricKey(initializationKeyBundle)
-            val derivedKeys = KDF.calculateDerivedKeys(symmetricKey)
+
+            val keyPair = KDF.calculateDerivedKeys(symmetricKey)
 
             initializeInitialMessageEncryptionBundle(
                 keyBundleDTO,
                 user,
                 initializationKeyBundle,
-                derivedKeys.rootKey.keyBytes
+                keyPair.rootKey.key,
+                ratchetSession
             )
         }
+    }
+
+    private fun initializeRatchetSession(initializationKeyBundle: InitializationKeyBundle) : RatchetSession{
+
+        val symmetricKey = generateSymmetricKey(initializationKeyBundle)
+
+        val keyPair = KDF.calculateDerivedKeys(symmetricKey)
+
+        val theirRatchetKey = ChainKey(initializationKeyBundle.bobSignedPreKey, 0)
+        val ourRatchetKeyPair = EccKeyHelper.generateKeyPair()
+        val ourRatchetPublicKey = ChainKey(ourRatchetKeyPair.privateKey, 0)
+        val ourRatchetPrivateKey = ChainKey(ourRatchetKeyPair.publicKey, 0)
+
+        val sendingChain: KeyPair = keyPair.rootKey.createChain(
+            theirRatchetKey,
+            ourRatchetPrivateKey
+        )
+
+        val receiverChainKey = keyPair.chainKey
+
+        return RatchetSession(
+            sendingChain.rootKey,
+            sendingChain.chainKey,
+            ourRatchetPrivateKey,
+            ourRatchetPublicKey,
+            theirRatchetKey,
+            receiverChainKey
+        )
     }
 
     private fun initializeKeyBundle(keyBundleDTO: KeyBundleDTO, localUser: UserEntity): InitializationKeyBundle {
@@ -118,11 +152,11 @@ class AliceEncryptionSessionInitializer @Inject constructor(
         val alicePrivateIdentityKey = initializationKeyBundle.alicePrivateIdentityKey
         val aliceEphemeralPrivateKey = initializationKeyBundle.aliceEphemeralPrivateKey
 
-        val dh1 = diffieHellman.createSharedSecret(alicePrivateIdentityKey, bobSignedPreKey)
-        val dh2 = diffieHellman.createSharedSecret(aliceEphemeralPrivateKey, bobIdentityKey)
-        val dh3 = diffieHellman.createSharedSecret(aliceEphemeralPrivateKey, bobSignedPreKey)
+        val dh1 = DiffieHellman.createSharedSecret(alicePrivateIdentityKey, bobSignedPreKey)
+        val dh2 = DiffieHellman.createSharedSecret(aliceEphemeralPrivateKey, bobIdentityKey)
+        val dh3 = DiffieHellman.createSharedSecret(aliceEphemeralPrivateKey, bobSignedPreKey)
 
-        val dh4 = if (bobOpk != null) diffieHellman.createSharedSecret(aliceEphemeralPrivateKey, bobOpk) else byteArrayOf()
+        val dh4 = if (bobOpk != null) DiffieHellman.createSharedSecret(aliceEphemeralPrivateKey, bobOpk) else byteArrayOf()
 
         return dh1 + dh2 + dh3 + dh4
     }
@@ -140,7 +174,8 @@ class AliceEncryptionSessionInitializer @Inject constructor(
         keyBundleDTO: KeyBundleDTO,
         localUser: UserEntity,
         initializationKeyBundle: InitializationKeyBundle,
-        symmetricKey: ByteArray
+        symmetricKey: ByteArray,
+        ratchetSession: RatchetSession
     ): InitialMessageEncryptionBundle {
 
         val alicePublicIdentityKey = decode(localUser.publicIdentityKey)
@@ -152,7 +187,8 @@ class AliceEncryptionSessionInitializer @Inject constructor(
             keyBundleDTO.onetimePreKeyId,
             keyBundleDTO.signedPreKeyId,
             symmetricKey,
-            ad
+            ad,
+            ratchetSession
         )
 
     }
@@ -168,7 +204,8 @@ class AliceEncryptionSessionInitializer @Inject constructor(
         val bobOpkId: Int?,
         val bobSignedPreKeyId: Int,
         val symmetricKey: ByteArray,
-        val ad: ByteArray
+        val ad: ByteArray,
+        val ratchetSession: RatchetSession
     )
 
     private fun decode(string: String): ByteArray {

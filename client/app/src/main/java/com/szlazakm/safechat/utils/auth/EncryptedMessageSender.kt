@@ -3,6 +3,7 @@ package com.szlazakm.safechat.utils.auth
 import android.util.Log
 import com.szlazakm.safechat.client.data.entities.EncryptionSessionEntity
 import com.szlazakm.safechat.client.data.repositories.EncryptionSessionRepository
+import com.szlazakm.safechat.utils.auth.rachet.RatchetSession
 import com.szlazakm.safechat.webclient.dtos.EncryptedMessageDTO
 import com.szlazakm.safechat.webclient.dtos.MessageDTO
 import kotlinx.coroutines.Dispatchers
@@ -28,6 +29,7 @@ class EncryptedMessageSender @Inject constructor(
 
         val symmetricKey: ByteArray
         val ad: ByteArray
+        val ratchetSession: RatchetSession
 
         if(encryptionSession == null) {
             Log.d("EncryptedMessageSender", "Encryption session is null")
@@ -41,8 +43,9 @@ class EncryptedMessageSender @Inject constructor(
 
             symmetricKey = initialMessageEncryptionBundle.symmetricKey
             ad = initialMessageEncryptionBundle.ad
+            ratchetSession = initialMessageEncryptionBundle.ratchetSession
 
-            createNewSession(receiverPhoneNumber, symmetricKey, ad)
+            createNewSession(receiverPhoneNumber, ad, ratchetSession)
 
             val cipherText = encryptMessage(symmetricKey, ad, messageDTO.text)
 
@@ -54,15 +57,19 @@ class EncryptedMessageSender @Inject constructor(
                 encode(initialMessageEncryptionBundle.aliceIdentityKey),
                 encode(initialMessageEncryptionBundle.aliceEphemeralPublicKey),
                 initialMessageEncryptionBundle.bobOpkId,
-                initialMessageEncryptionBundle.bobSignedPreKeyId
+                initialMessageEncryptionBundle.bobSignedPreKeyId,
+                encode(ratchetSession.sendingChainKey.key),
+                0,
+                0
             )
 
         } else {
 
             Log.d("EncryptedMessageSender", "Encryption session is not null $encryptionSession")
 
-            symmetricKey = decode(encryptionSession.symmetricKey)
+            symmetricKey = decode(encryptionSession.rootKey)
             ad = decode(encryptionSession.ad)
+            encryptionSession.messageNumber += 1
 
             val cipherText = encryptMessage(symmetricKey, ad, messageDTO.text)
 
@@ -74,19 +81,29 @@ class EncryptedMessageSender @Inject constructor(
                 null,
                 null,
                 null,
-                null
+                null,
+                encryptionSession.sendingChainKey,
+                encryptionSession.messageNumber,
+                encryptionSession.previousChainLength
             )
         }
     }
 
     private suspend fun createNewSession(
         phoneNumber: String,
-        symmetricKey: ByteArray,
-        ad: ByteArray
+        ad: ByteArray,
+        ratchetSession: RatchetSession
     ) {
         val encryptionSessionEntity = EncryptionSessionEntity(
             phoneNumber,
-            encode(symmetricKey),
+            rootKey = encode(ratchetSession.rootKey.key),
+            sendingChainKey = encode(ratchetSession.sendingChainKey.key),
+            ourPublicRatchetKey = encode(ratchetSession.ourPublicRatchetKey.key),
+            ourPrivateRatchetKey = encode(ratchetSession.ourPrivateRatchetKey.key),
+            receivingChainKey = encode(ratchetSession.receivingChainKey.key),
+            theirRatchetKey = encode(ratchetSession.theirRatchetKey.key),
+            0,
+            0,
             encode(ad)
         )
         (Dispatchers.IO) {
