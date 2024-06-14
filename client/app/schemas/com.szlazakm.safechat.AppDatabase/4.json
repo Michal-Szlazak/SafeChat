@@ -2,16 +2,16 @@
   "formatVersion": 1,
   "database": {
     "version": 4,
-    "identityHash": "e6066de6e25f6b5ac8aaca621a363f2a",
+    "identityHash": "db329cb839f8e628bf99515a24b39ecd",
     "entities": [
       {
         "tableName": "contact_entity",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `firstName` TEXT NOT NULL, `lastName` TEXT NOT NULL, `phoneNumber` TEXT NOT NULL, `email` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `photo` TEXT, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` BLOB NOT NULL, `firstName` TEXT NOT NULL, `lastName` TEXT NOT NULL, `phoneNumber` TEXT NOT NULL, `email` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `photo` TEXT, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
             "columnName": "id",
-            "affinity": "INTEGER",
+            "affinity": "BLOB",
             "notNull": true
           },
           {
@@ -62,7 +62,7 @@
       },
       {
         "tableName": "message_entity",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `content` TEXT NOT NULL, `senderId` INTEGER NOT NULL, `receiverId` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, FOREIGN KEY(`senderId`) REFERENCES `contact_entity`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`receiverId`) REFERENCES `contact_entity`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `content` TEXT NOT NULL, `senderId` BLOB NOT NULL, `receiverId` BLOB NOT NULL, `timestamp` INTEGER NOT NULL, FOREIGN KEY(`senderId`) REFERENCES `contact_entity`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`receiverId`) REFERENCES `contact_entity`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "id",
@@ -79,13 +79,13 @@
           {
             "fieldPath": "senderId",
             "columnName": "senderId",
-            "affinity": "INTEGER",
+            "affinity": "BLOB",
             "notNull": true
           },
           {
             "fieldPath": "receiverId",
             "columnName": "receiverId",
-            "affinity": "INTEGER",
+            "affinity": "BLOB",
             "notNull": true
           },
           {
@@ -188,7 +188,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e6066de6e25f6b5ac8aaca621a363f2a')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'db329cb839f8e628bf99515a24b39ecd')"
     ]
   }
 }

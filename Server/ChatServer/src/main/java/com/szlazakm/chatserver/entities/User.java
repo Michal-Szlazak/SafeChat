@@ -21,19 +21,18 @@ public class User {
     @Id
     @GeneratedValue
     private UUID userId;
-    @Column(nullable = false)
+    @Column(nullable = false, length = 600)
     private String identityKey;
-    private String signedPreKey;
-    private String signature;
     @Column(nullable = false)
     private String firstName;
     @Column(nullable = false)
     private String lastName;
-    @Column(unique = true, nullable = false)
+    @Column(unique = true, nullable = false, name = "phone_number")
     private String phoneNumber;
     private boolean isVerified;
+    private String pin;
 
-    @OneToMany
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OPK> OPKS;
 
     @ManyToMany

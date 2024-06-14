@@ -1,7 +1,6 @@
 package com.szlazakm.chatserver.controllers;
 
-import com.szlazakm.chatserver.dtos.SPKCreateDTO;
-import com.szlazakm.chatserver.dtos.UserCreateDTO;
+import com.szlazakm.chatserver.dtos.*;
 import com.szlazakm.chatserver.services.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,13 +17,29 @@ public class UserController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public void createUser(UserCreateDTO userCreateDTO) {
+    public void createUser(@RequestBody UserCreateDTO userCreateDTO) {
         userService.createUser(userCreateDTO);
     }
 
     @PostMapping("/spk")
     @ResponseStatus(HttpStatus.CREATED)
-    public void addSpk(SPKCreateDTO spkCreateDTO) throws SignatureException {
+    public void addSpk(@RequestBody SPKCreateDTO spkCreateDTO) throws SignatureException {
         userService.createSPK(spkCreateDTO);
+    }
+
+    @GetMapping
+    public UserDTO getUser(@RequestParam String phoneNumber) {
+
+        return userService.getUserByPhoneNumber(phoneNumber);
+    }
+
+    @GetMapping("/keyBundle")
+    public KeyBundleDTO getKeyBundle(@RequestParam String phoneNumber) {
+        return userService.getKeyBundle(phoneNumber);
+    }
+
+    @PostMapping("/verify")
+    public boolean verifyPhoneNumber(@RequestBody VerifyPhoneNumberDTO verifyPhoneNumberDTO) {
+        return userService.verifyPhoneNumber(verifyPhoneNumberDTO);
     }
 }
