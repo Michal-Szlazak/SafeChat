@@ -27,6 +27,6 @@ public class OPKController {
     @ResponseStatus(HttpStatus.OK)
     public List<Integer> getOPKs(@PathVariable String phoneNumber) {
         Log.d("OPKController", "Get opks called for number: " + phoneNumber);
-        return opkService.getOPKS(phoneNumber);
+        return opkService.getOPKsIds(phoneNumber);
     }
 }
