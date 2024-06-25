@@ -16,6 +16,6 @@ interface PreKeyWebService {
     @GET("/api/opk/{phoneNumber}")
     fun getUnusedOPKIdsByPhoneNumber(@Path("phoneNumber") phoneNumber: String): Call<List<Int>>
 
-    @POST("/api/user/spk")
+    @POST("/api/spk")
     fun  addNewSPK(@Body spkCreateDTO: SPKCreateDTO): Call<Void>
 }
