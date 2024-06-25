@@ -9,12 +9,12 @@ import com.szlazakm.chatserver.exceptionHandling.exceptions.UserNotFoundExceptio
 import com.szlazakm.chatserver.repositories.SPKRepository;
 import com.szlazakm.chatserver.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.security.SignatureException;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -23,9 +23,9 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final SPKRepository spkRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
-    public void createUser(UserCreateDTO userCreateDTO) {
+    public UUID createUser(UserCreateDTO userCreateDTO) {
 
         String encodedPin = passwordEncoder.encode(userCreateDTO.getPin());
 
@@ -37,41 +37,9 @@ public class UserService {
                 .pin(encodedPin)
                 .build();
 
-        userRepository.save(user);
-    }
+        User savedUser = userRepository.save(user);
 
-    public void createSPK(SPKCreateDTO spkCreateDTO) throws SignatureException {
-
-        Optional<User> optUser = userRepository.findByPhoneNumber(spkCreateDTO.getPhoneNumber());
-        User user = optUser.orElseThrow(UserNotFoundException::new);
-        Optional<SPK> optSpk = spkRepository.findByUserPhoneNumber(spkCreateDTO.getPhoneNumber());
-
-        SPK spk;
-
-        if(optSpk.isEmpty()) {
-            spk = SPK.builder()
-                    .keyId(spkCreateDTO.getId())
-                    .signedPreKey(spkCreateDTO.getSignedPreKey())
-                    .signature(spkCreateDTO.getSignature())
-                    .timestamp(spkCreateDTO.getTimestamp())
-                    .user(user)
-                    .build();
-        } else {
-
-            spk = optSpk.get();
-            spk.setKeyId(spkCreateDTO.getId());
-            spk.setSignedPreKey(spkCreateDTO.getSignedPreKey());
-            spk.setSignature(spkCreateDTO.getSignature());
-            spk.setTimestamp(spkCreateDTO.getTimestamp());
-        }
-
-        boolean isSignatureVerified = true; //TODO Verify the signature
-
-        if(isSignatureVerified) {
-            spkRepository.save(spk);
-        } else {
-            throw new SignatureException("Signature verification returned false.");
-        }
+        return savedUser.getUserId();
     }
 
     public UserDTO getUserByPhoneNumber(String phoneNumber) {
