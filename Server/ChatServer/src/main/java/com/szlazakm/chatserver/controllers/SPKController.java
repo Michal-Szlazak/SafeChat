@@ -1,6 +1,6 @@
 package com.szlazakm.chatserver.controllers;
 
-import com.szlazakm.chatserver.dtos.SPKCreateDTO;
+import com.szlazakm.chatserver.dtos.SPKCreateOrUpdateDTO;
 import com.szlazakm.chatserver.services.SPKService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,8 +17,8 @@ public class SPKController {
 
     @PostMapping()
     @ResponseStatus(HttpStatus.CREATED)
-    public void addSpk(@RequestBody SPKCreateDTO spkCreateDTO) throws SignatureException {
-        spkService.createSPK(spkCreateDTO);
+    public void addSpk(@RequestBody SPKCreateOrUpdateDTO spkCreateOrUpdateDTO) throws SignatureException {
+        spkService.createOrUpdateSPK(spkCreateOrUpdateDTO);
     }
 
 }

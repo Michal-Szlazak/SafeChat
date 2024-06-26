@@ -11,6 +11,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -137,5 +138,19 @@ class MessageServiceTest {
         assertEquals(message2.getFromPhoneNumber(), resultMessage2.getFrom());
         assertEquals(message2.getToPhoneNumber(), resultMessage2.getTo());
         assertEquals(message2.isInitial(), resultMessage2.isInitial());
+    }
+
+    @Test
+    void getAllNewMessages_ShouldReturnEmptyList_WhenNewMessagesNotExist() {
+
+        // Arrange
+        String toPhoneNumber = "123";
+        when(messageRepository.getAllByToPhoneNumber(toPhoneNumber)).thenReturn(new ArrayList<>());
+
+        // Act
+        List<OutputEncryptedMessageDTO> resultMessages = messageService.getAllNewMessages(toPhoneNumber);
+
+        // Assert
+        assertTrue(resultMessages.isEmpty());
     }
 }

@@ -83,12 +83,12 @@ class OPKServiceTest {
     void createOPK_ShouldThrowUserNotFound_WhenUserNotExist() {
 
         // Arrange
+        String randomPhoneNumber = "123321123";
         OPKsCreateDTO opKsCreateDTO = OPKsCreateDTO.builder()
-                .phoneNumber(user.getPhoneNumber())
+                .phoneNumber(randomPhoneNumber)
                 .opkCreateDTOs(opkCreateDTOS)
                 .build();
 
-        String randomPhoneNumber = "123321123";
         when(userRepository.findByPhoneNumber(randomPhoneNumber)).thenReturn(Optional.empty());
 
         // Act & Assert
