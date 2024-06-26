@@ -42,10 +42,10 @@ public class MessageService {
                         message.getFromPhoneNumber(),
                         message.getToPhoneNumber(),
                         message.getCipher(),
-                        null,
-                        null,
-                        null,
-                        null,
+                        message.getAliceIdentityPublicKey(),
+                        message.getAliceEphemeralPublicKey(),
+                        message.getBobOpkId(),
+                        message.getBobSpkId(),
                         message.getTimestamp()
                 )
         ).toList();
