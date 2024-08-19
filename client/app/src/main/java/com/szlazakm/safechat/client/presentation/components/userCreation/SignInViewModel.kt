@@ -1,4 +1,4 @@
-package com.szlazakm.safechat.client.presentation.components.auth
+package com.szlazakm.safechat.client.presentation.components.userCreation
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -10,7 +10,8 @@ import com.szlazakm.safechat.client.data.repositories.UserRepository
 import com.szlazakm.safechat.client.data.services.MessageSaverManager
 import com.szlazakm.safechat.client.domain.Contact
 import com.szlazakm.safechat.client.domain.LocalUserData
-import com.szlazakm.safechat.client.presentation.ScreenRoutes
+import com.szlazakm.safechat.client.presentation.MainScreenRoutes
+import com.szlazakm.safechat.client.presentation.UserCreationScreenRoutes
 import com.szlazakm.safechat.client.presentation.states.SignInState
 import com.szlazakm.safechat.utils.auth.PreKeyManager
 import com.szlazakm.safechat.webclient.dtos.UserCreateDTO
@@ -23,7 +24,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.invoke
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.whispersystems.libsignal.ecc.DjbECPublicKey
 import java.util.Base64
 import java.util.Date
 import javax.inject.Inject
@@ -46,13 +46,6 @@ class SignInViewModel @Inject constructor(
             if(user != null) {
                 LocalUserData.getInstance().setUserData(user)
             }
-        }
-    }
-
-    suspend fun isUserCreated(): Boolean {
-
-        return (Dispatchers.IO) {
-            userRepository.isUserCreated()
         }
     }
 
@@ -86,8 +79,8 @@ class SignInViewModel @Inject constructor(
 
     fun saveUser(
         navController: NavController,
-        successDestination: ScreenRoutes,
-        failureDestination: ScreenRoutes
+        successDestination: UserCreationScreenRoutes,
+        failureDestination: UserCreationScreenRoutes
     ) {
 
         val keyPair = preKeyManager.generateIdentityKeys()

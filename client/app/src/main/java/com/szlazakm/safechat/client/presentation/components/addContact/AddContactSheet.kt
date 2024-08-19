@@ -31,7 +31,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.szlazakm.safechat.client.domain.Contact
-import com.szlazakm.safechat.client.presentation.ScreenRoutes
+import com.szlazakm.safechat.client.presentation.MainScreenRoutes
 import com.szlazakm.safechat.client.presentation.components.chat.ChatViewModel
 import com.szlazakm.safechat.webclient.dtos.UserDTO
 
@@ -102,7 +102,7 @@ fun AddContactScreen(
                         chatViewModel.setContact(contact)
                         navController.navigate(
 
-                            ScreenRoutes.Chat.route.replace(
+                            MainScreenRoutes.Chat.route.replace(
                                 "{phoneNumber}",
                                 state.userDTO.phoneNumber
                             )

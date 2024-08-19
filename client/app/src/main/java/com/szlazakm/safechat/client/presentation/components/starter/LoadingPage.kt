@@ -1,4 +1,4 @@
-package com.szlazakm.safechat.client.presentation.components.auth
+package com.szlazakm.safechat.client.presentation.components.starter
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -17,14 +17,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
-import androidx.navigation.NavController
-import com.szlazakm.safechat.client.presentation.ScreenRoutes
 import kotlinx.coroutines.delay
 
 @Composable
 fun WelcomeScreen(
-    viewModel: SignInViewModel,
-    navController: NavController
+    viewModel: StarterViewModel,
+    onUserCreated: () -> Unit,
+    onUserNotCreated: () -> Unit
 ) {
     var isLoading by remember { mutableStateOf(true) }
     var localUserPresent by remember { mutableStateOf(false) }
@@ -36,10 +35,10 @@ fun WelcomeScreen(
         delay(1000L)
 
         if(localUserPresent) {
-            viewModel.loadLocalUserData()
-            navController.navigate(ScreenRoutes.ContactList.route)
+            viewModel.loadLocalUserData() // Should be deleted?
+            onUserCreated()
         } else {
-            navController.navigate(ScreenRoutes.SignInUserDetails.route)
+            onUserNotCreated()
         }
     }
 

@@ -1,4 +1,4 @@
-package com.szlazakm.safechat.client.presentation.components.auth
+package com.szlazakm.safechat.client.presentation.components.userCreation
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding

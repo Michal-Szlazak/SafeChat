@@ -1,4 +1,4 @@
-package com.szlazakm.safechat.client.presentation.components.auth
+package com.szlazakm.safechat.client.presentation.components.userCreation
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
