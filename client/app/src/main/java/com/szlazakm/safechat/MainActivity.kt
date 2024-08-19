@@ -6,7 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.lifecycle.lifecycleScope
 import com.szlazakm.safechat.client.data.services.MessageSaverManager
-import com.szlazakm.safechat.client.presentation.SafeChatApp
+import com.szlazakm.safechat.client.presentation.StarterScreen
 import com.szlazakm.safechat.ui.theme.SafeChatTheme
 import com.szlazakm.safechat.utils.auth.PreKeyManager
 import dagger.hilt.android.AndroidEntryPoint
@@ -28,7 +28,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             SafeChatTheme {
-                SafeChatApp()
+                StarterScreen()
             }
         }
 
