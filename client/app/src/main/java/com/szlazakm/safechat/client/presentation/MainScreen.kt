@@ -1,16 +1,14 @@
 package com.szlazakm.safechat.client.presentation
 
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
+import android.util.Log
+import androidx.compose.runtime.remember
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
-import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
 import com.szlazakm.safechat.client.presentation.components.addContact.AddContactScreen
 import com.szlazakm.safechat.client.presentation.components.addContact.AddContactViewModel
@@ -18,26 +16,30 @@ import com.szlazakm.safechat.client.presentation.components.chat.ChatScreen
 import com.szlazakm.safechat.client.presentation.components.chat.ChatViewModel
 import com.szlazakm.safechat.client.presentation.components.contactList.ContactListScreen
 import com.szlazakm.safechat.client.presentation.components.contactList.ContactListViewModel
+import com.szlazakm.safechat.client.presentation.components.userCreation.SignInViewModel
 
-@Composable
-fun MainScreen(
-    navController: NavHostController = rememberNavController(),
-    contactListViewModel: ContactListViewModel = viewModel(),
-    chatViewModel: ChatViewModel = viewModel(),
-    addContactViewModel: AddContactViewModel = viewModel()
+fun NavGraphBuilder.mainGraph(
+    navController: NavHostController
 ) {
 
-    Scaffold { paddingValues ->
-
-        NavHost(
-            navController = navController,
+        navigation(
             startDestination = MainScreenRoutes.ContactList.route,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+            route = MainScreenRoutes.MainScreen.route
         ) {
             composable(MainScreenRoutes.ContactList.route) {
+
+                Log.i("MainScreen", "Navigating to contact list")
+
+                val contactListViewModel = hiltViewModel<ContactListViewModel>()
+//                val parentEntry = remember(navController.currentBackStackEntry) {
+//                    navController.getBackStackEntry(UserCreationScreenRoutes.MainScreen.route)
+//                }
+//                val chatViewModel: ChatViewModel = hiltViewModel(parentEntry)
+
+                val chatViewModel = hiltViewModel<ChatViewModel>()
+
                 contactListViewModel.loadContactList()
+
                 ContactListScreen(
                     navController = navController,
                     viewModel = contactListViewModel,
@@ -47,6 +49,16 @@ fun MainScreen(
             composable(
                 route = MainScreenRoutes.AddContact.route
             ) {
+
+                Log.i("MainScreen", "Navigating to add contact")
+
+                val addContactViewModel = hiltViewModel<AddContactViewModel>()
+//                val parentEntry = remember(navController.currentBackStackEntry) {
+//                    navController.getBackStackEntry(UserCreationScreenRoutes.MainScreen.route)
+//                }
+//                val chatViewModel: ChatViewModel = hiltViewModel(parentEntry)
+
+                val chatViewModel = hiltViewModel<ChatViewModel>()
 
                 AddContactScreen(
                     navController = navController,
@@ -62,16 +74,23 @@ fun MainScreen(
             ) { backStackEntry ->
                 val contactPhoneNumber = backStackEntry.arguments?.getString("phoneNumber")
 
+//                val parentEntry = remember(navController.currentBackStackEntry) {
+//                    navController.getBackStackEntry(UserCreationScreenRoutes.MainScreen.route)
+//                }
+//                val chatViewModel: ChatViewModel = hiltViewModel(parentEntry)
+
+                val chatViewModel = hiltViewModel<ChatViewModel>()
+
                 chatViewModel.loadChat()
+
                 ChatScreen(viewModel = chatViewModel)
             }
         }
-
-    }
 }
 
 enum class MainScreenRoutes (val route: String) {
+    MainScreen("main"),
     ContactList("contactList"),
-    Chat("chat"),
+    Chat("chat/{phoneNumber}"),
     AddContact("addContact")
 }

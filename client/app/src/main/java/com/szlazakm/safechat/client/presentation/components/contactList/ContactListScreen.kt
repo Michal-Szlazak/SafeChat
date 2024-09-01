@@ -82,6 +82,7 @@ fun ContactListScreen(
                         .fillMaxWidth()
                         .clickable {
                             viewModel.onEvent(ContactListEvent.OnConversationClick(contact))
+                            Log.i("ContactListScreen", "Contact clicked: ${contact.phoneNumber}")
                             chatViewModel.setContact(contact)
                             navController.navigate(
                                 MainScreenRoutes.Chat.route.replace("{phoneNumber}", contact.phoneNumber)

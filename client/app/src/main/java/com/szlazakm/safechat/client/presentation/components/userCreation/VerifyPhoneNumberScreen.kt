@@ -29,7 +29,6 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun VerifyPhoneNumberScreen(
-    state: SignInState,
     viewModel: SignInViewModel,
     onVerifyClick: (Boolean) -> Unit
 ) {
@@ -63,7 +62,7 @@ fun VerifyPhoneNumberScreen(
             loading = true
             scope.launch {
                 try {
-                    val verified = viewModel.verifyPhoneNumber(state.phoneNumber)
+                    val verified = viewModel.verifyPhoneNumber(viewModel.state.value.phoneNumber)
 
                     if(verified) {
                         onVerifyClick(verified)

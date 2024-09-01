@@ -6,12 +6,18 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.fragment.app.Fragment
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navigation
+import com.szlazakm.safechat.R
 import com.szlazakm.safechat.client.presentation.components.userCreation.PinScreen
 import com.szlazakm.safechat.client.presentation.components.userCreation.SignInScreen
 import com.szlazakm.safechat.client.presentation.components.userCreation.SignInUserDetailsScreen
@@ -19,97 +25,129 @@ import com.szlazakm.safechat.client.presentation.components.userCreation.SignInV
 import com.szlazakm.safechat.client.presentation.components.userCreation.VerifyPhoneNumberScreen
 import com.szlazakm.safechat.client.presentation.components.userCreation.VerifyPinScreen
 
-@Composable
-fun UserCreationScreen(
-    signInViewModel: SignInViewModel = viewModel(),
-    navController: NavHostController = rememberNavController()
+
+fun NavGraphBuilder.userCreationGraph(
+    navController: NavHostController
 ) {
 
-    Scaffold { paddingValues ->
+    navigation(
+        startDestination = UserCreationScreenRoutes.SignIn.route,
+        route = UserCreationScreenRoutes.UserCreation.route
+    )
+     {
+        composable(UserCreationScreenRoutes.SignIn.route) {
 
-        NavHost(
-            navController = navController,
-            startDestination = UserCreationScreenRoutes.SignIn.route,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            composable(UserCreationScreenRoutes.SignIn.route) {
+            val parentEntry = remember(navController.currentBackStackEntry) {
+                navController.getBackStackEntry(UserCreationScreenRoutes.SignIn.route)
+            }
 
-                SignInScreen(
-                    viewModel = signInViewModel,
-                    onSignInClick = { phoneExtension: String, phoneNumber: String ->
-                        // TODO add phone extension to the phone number
-                        signInViewModel.setPhoneNumber(phoneNumber)
+            // Retrieve the ViewModel scoped to the parent graph
+            val vm: SignInViewModel = hiltViewModel(parentEntry)
+
+            SignInScreen(
+                viewModel = vm,
+                onSignInClick = { phoneExtension: String, phoneNumber: String ->
+                    // TODO add phone extension to the phone number
+                    vm.setPhoneNumber(phoneNumber)
+                    navController.navigate(UserCreationScreenRoutes.SignInUserDetails.route)
+                }
+            )
+        }
+        composable(UserCreationScreenRoutes.SignInUserDetails.route) {
+
+            val parentEntry = remember(navController.currentBackStackEntry) {
+                navController.getBackStackEntry(UserCreationScreenRoutes.SignIn.route)
+            }
+
+            // Retrieve the ViewModel scoped to the parent graph
+            val vm: SignInViewModel = hiltViewModel(parentEntry)
+
+            SignInUserDetailsScreen(
+                onSaveClicked = { firstName: String, lastName: String ->
+
+                    vm.setUserDetails(
+                        firstName,
+                        lastName
+                    )
+                    navController.navigate(UserCreationScreenRoutes.SignInPin.route)
+                }
+            )
+        }
+        composable(UserCreationScreenRoutes.SignInPin.route) {
+
+            val parentEntry = remember(navController.currentBackStackEntry) {
+                navController.getBackStackEntry(UserCreationScreenRoutes.SignIn.route)
+            }
+
+            // Retrieve the ViewModel scoped to the parent graph
+            val vm: SignInViewModel = hiltViewModel(parentEntry)
+
+            PinScreen(
+                onPinEntered = {
+                    vm.savePin(it)
+                    navController.navigate(UserCreationScreenRoutes.VerifyPin.route)
+                }
+            )
+        }
+        composable(UserCreationScreenRoutes.VerifyPin.route) {
+
+            val parentEntry = remember(navController.currentBackStackEntry) {
+                navController.getBackStackEntry(UserCreationScreenRoutes.SignIn.route)
+            }
+
+            // Retrieve the ViewModel scoped to the parent graph
+            val vm: SignInViewModel = hiltViewModel(parentEntry)
+            val state by vm.state.collectAsState()
+
+            VerifyPinScreen(
+                onVerify = { verifyPin ->
+                    if(verifyPin == state.pin) {
                         navController.navigate(UserCreationScreenRoutes.VerifyPhoneNumber.route)
-                    }
-                )
-            }
-            composable(UserCreationScreenRoutes.VerifyPhoneNumber.route) {
-
-                val state by signInViewModel.state.collectAsState()
-
-                VerifyPhoneNumberScreen(
-                    state = state,
-                    viewModel = signInViewModel,
-                    onVerifyClick = {
-                        //TODO(verify the code)
-                        if(it) {
-                            signInViewModel.saveUser(
-                                navController = navController,
-                                successDestination = UserCreationScreenRoutes.MainScreen,
-                                failureDestination = UserCreationScreenRoutes.SignInUserDetails
-                            )
-                            navController.navigate(UserCreationScreenRoutes.MainScreen.route)
-                        } else {
-                            navController.navigate(UserCreationScreenRoutes.SignIn.route)
-                        }
-                    }
-                )
-            }
-            composable(UserCreationScreenRoutes.SignInUserDetails.route) {
-
-                SignInUserDetailsScreen(
-                    onSaveClicked = { firstName: String, lastName: String ->
-
-                        signInViewModel.setUserDetails(
-                            firstName,
-                            lastName
-                        )
+                    } else {
                         navController.navigate(UserCreationScreenRoutes.SignInPin.route)
                     }
-                )
-            }
-            composable(UserCreationScreenRoutes.SignInPin.route) {
+                }
+            )
+        }
+         composable(UserCreationScreenRoutes.VerifyPhoneNumber.route) {
 
-                PinScreen(
-                    onPinEntered = {
-                        signInViewModel.savePin(it)
-                        navController.navigate(UserCreationScreenRoutes.VerifyPin.route)
-                    }
-                )
-            }
-            composable(UserCreationScreenRoutes.VerifyPin.route) {
-                val state by signInViewModel.state.collectAsState()
+    //            val state by signInViewModel.state.collectAsState()
 
-                VerifyPinScreen(
-                    onVerify = { verifyPin ->
-                        if(verifyPin == state.pin) {
-                            navController.navigate(UserCreationScreenRoutes.SignIn.route)
-                        } else {
-                            navController.navigate(UserCreationScreenRoutes.SignInPin.route)
-                        }
-                    }
-                )
-            }
-            composable(UserCreationScreenRoutes.MainScreen.route) {
-                MainScreen()
+             val parentEntry = remember(navController.currentBackStackEntry) {
+                 navController.getBackStackEntry(UserCreationScreenRoutes.SignIn.route)
+             }
+             val vm: SignInViewModel = hiltViewModel(parentEntry)
+
+             VerifyPhoneNumberScreen(
+                 viewModel = vm,
+                 onVerifyClick = {
+                     //TODO(verify the code)
+                     if(it) {
+                         vm.saveUser(
+                             navController = navController,
+                             successDestination = UserCreationScreenRoutes.MainScreen,
+                             failureDestination = UserCreationScreenRoutes.SignIn
+                         )
+                     } else {
+                         navController.navigate(UserCreationScreenRoutes.SignIn.route) {
+                                popUpTo(UserCreationScreenRoutes.SignIn.route)
+                                launchSingleTop = true
+                         }
+                     }
+                 }
+             )
+         }
+        composable(UserCreationScreenRoutes.MainScreen.route) {
+            navController.navigate(MainScreenRoutes.MainScreen.route) {
+                popUpTo(UserCreationScreenRoutes.UserCreation.route)
+                launchSingleTop = true
             }
         }
     }
 }
 
 enum class UserCreationScreenRoutes(val route: String) {
+    UserCreation("user_creation"),
     SignIn("sing_in"),
     VerifyPhoneNumber("verify_phone_number"),
     SignInUserDetails("user_details"),

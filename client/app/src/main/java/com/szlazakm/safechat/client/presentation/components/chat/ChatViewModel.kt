@@ -48,6 +48,8 @@ class ChatViewModel @Inject constructor(
 
     fun loadChat() {
 
+        Log.i("ChatViewModel", "Loading chat with contact: ${chatState.value.selectedContact}")
+
         val messageSaverService = MessageSaverService.getInstance()
         messageSaverService?.setMessageListener(this)
 
@@ -82,9 +84,6 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    fun getContact(phoneNumber: String) : Contact? {
-        return contactRepository.getContact(phoneNumber)
-    }
 
     fun onEvent(event: ChatEvent) {
         when (event) {
@@ -161,10 +160,10 @@ class ChatViewModel @Inject constructor(
 
                                 chatState.value = state.value.copy(messages = updatedMessages)
                             } else {
-                                println("Failed send message. Response code: ${response.code()}")
+                                Log.e("ChatViewModel", "Failed send message. Response code: ${response.code()}")
                             }
                         } catch (e: Exception) {
-                            println("Failed to send message: ${e.message}")
+                            Log.e("ChatViewModel", "Failed to send message ex: ${e.message}")
                         }
                     }
 

@@ -6,6 +6,7 @@ import android.os.IBinder
 import android.util.Log
 import com.google.gson.Gson
 import com.szlazakm.safechat.client.data.entities.MessageEntity
+import com.szlazakm.safechat.client.data.entities.UserEntity
 import com.szlazakm.safechat.client.data.repositories.ContactRepository
 import com.szlazakm.safechat.client.data.repositories.MessageRepository
 import com.szlazakm.safechat.client.data.repositories.UserRepository
@@ -86,12 +87,14 @@ class MessageSaverService : Service(){
 
     private suspend fun connectToUserQueue() {
 
-        val localUser = userRepository.getLocalUser()
+        var localUser: UserEntity
 
-        if(localUser == null) {
+        try {
+            localUser = userRepository.getLocalUser()
+        } catch (e: Exception) {
             Log.e(
                 "MessageSaverService",
-                "LocalUser is not created yet. Aborting MessageServiceCreation."
+                "Exception while trying to get local user. Aborting MessageServiceCreation."
             )
             return
         }

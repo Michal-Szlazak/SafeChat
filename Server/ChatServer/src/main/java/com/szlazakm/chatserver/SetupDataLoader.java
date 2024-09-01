@@ -7,7 +7,6 @@ import com.szlazakm.chatserver.repositories.PrivilegeRepository;
 import com.szlazakm.chatserver.repositories.RoleRepository;
 import com.szlazakm.chatserver.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;

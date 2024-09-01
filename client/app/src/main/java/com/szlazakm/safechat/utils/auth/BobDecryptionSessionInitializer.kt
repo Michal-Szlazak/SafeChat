@@ -4,15 +4,13 @@ import android.util.Log
 import com.szlazakm.safechat.client.data.entities.UserEntity
 import com.szlazakm.safechat.client.data.repositories.PreKeyRepository
 import com.szlazakm.safechat.client.data.repositories.UserRepository
-import com.szlazakm.safechat.client.domain.LocalUserData
+import com.szlazakm.safechat.utils.auth.utils.Decoder
+import com.szlazakm.safechat.utils.auth.utils.DiffieHellman
+import com.szlazakm.safechat.utils.auth.utils.KDF
 import com.szlazakm.safechat.webclient.dtos.OutputEncryptedMessageDTO
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.invoke
 import kotlinx.coroutines.withContext
-import org.whispersystems.libsignal.IdentityKeyPair
-import org.whispersystems.libsignal.ecc.DjbECPrivateKey
-import org.whispersystems.libsignal.ecc.DjbECPublicKey
-import java.util.Base64
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -48,7 +46,7 @@ class BobDecryptionSessionInitializer @Inject constructor(
             val ad = initializationKeyBundle.aliceIdentityKey + initializationKeyBundle.bobPublicIdentityKey
 
             BobInitializeSessionBundle(
-                derivedKeys.rootKey.keyBytes,
+                derivedKeys.rootKey.key,
                 ad
             )
         }
@@ -65,7 +63,7 @@ class BobDecryptionSessionInitializer @Inject constructor(
                 preKeyRepository.getOPKById(encryptedMessage.bobOpkId)
             }.privateOPK
 
-            bobOpk = decode(encodedBobOpk)
+            bobOpk = Decoder.decode(encodedBobOpk)
         }
 
         if(encryptedMessage.bobSpkId == null) {
@@ -87,14 +85,14 @@ class BobDecryptionSessionInitializer @Inject constructor(
             preKeyRepository.getSPKById(encryptedMessage.bobSpkId)
         }.privateKey
 
-        val bobPrivateIdentityKey = decode(localUser.privateIdentityKey)
-        val bobPublicIdentityKey = decode(localUser.publicIdentityKey)
+        val bobPrivateIdentityKey = Decoder.decode(localUser.privateIdentityKey)
+        val bobPublicIdentityKey = Decoder.decode(localUser.publicIdentityKey)
 
         return BobInitializationKeyBundle(
-            decode(aliceIdentityKey),
-            decode(aliceEphemeralPublicKey),
+            Decoder.decode(aliceIdentityKey),
+            Decoder.decode(aliceEphemeralPublicKey),
             bobOpk,
-            decode(bobSignedPreKey),
+            Decoder.decode(bobSignedPreKey),
             bobPrivateIdentityKey,
             bobPublicIdentityKey
         )
@@ -130,8 +128,4 @@ class BobDecryptionSessionInitializer @Inject constructor(
         val symmetricKey: ByteArray,
         val ad: ByteArray
     )
-
-    private fun decode(string: String): ByteArray {
-        return Base64.getDecoder().decode(string)
-    }
 }

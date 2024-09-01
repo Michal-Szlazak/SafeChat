@@ -4,13 +4,13 @@ import android.util.Log
 import com.szlazakm.safechat.client.data.entities.UserEntity
 import com.szlazakm.safechat.client.data.repositories.UserRepository
 import com.szlazakm.safechat.utils.auth.ecc.EccKeyHelper
+import com.szlazakm.safechat.utils.auth.utils.Decoder
+import com.szlazakm.safechat.utils.auth.utils.DiffieHellman
+import com.szlazakm.safechat.utils.auth.utils.KDF
 import com.szlazakm.safechat.webclient.dtos.KeyBundleDTO
 import com.szlazakm.safechat.webclient.webservices.UserWebService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.whispersystems.curve25519.Curve25519
-import org.whispersystems.curve25519.Curve25519.BEST
-import java.util.Base64
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -20,6 +20,44 @@ class AliceEncryptionSessionInitializer @Inject constructor(
     private val userRepository: UserRepository
 ){
     private val diffieHellman = DiffieHellman()
+
+    suspend fun getInitialMessageEncryptionBundle(phoneNumber: String): InitialMessageEncryptionBundle? {
+
+        return withContext(Dispatchers.IO) {
+            val keyBundleDTO = getKeyBundleForUser(phoneNumber)
+
+            if (keyBundleDTO == null) {
+                Log.e(
+                    "EncryptionSessionManager",
+                    "Failed to get key bundle for phone: $phoneNumber"
+                )
+                return@withContext null
+            }
+
+            val signingKey = Decoder.decode(keyBundleDTO.identityKey)
+            val message = Decoder.decode(keyBundleDTO.signedPreKey)
+            val signature = Decoder.decode(keyBundleDTO.signature)
+
+            if(!verifySignature(signingKey, message, signature)) {
+                Log.e("EncryptionSessionManager", "Signature verification failed.")
+                return@withContext null
+            }
+
+            val user = userRepository.getLocalUser()
+
+            val initializationKeyBundle = initializeKeyBundle(keyBundleDTO, user)
+
+            val symmetricKey = generateSymmetricKey(initializationKeyBundle)
+            val derivedKeys = KDF.calculateDerivedKeys(symmetricKey)
+
+            initializeInitialMessageEncryptionBundle(
+                keyBundleDTO,
+                user,
+                initializationKeyBundle,
+                derivedKeys.rootKey.key
+            )
+        }
+    }
 
     private fun getKeyBundleForUser(phoneNumber: String) : KeyBundleDTO? {
 
@@ -43,48 +81,6 @@ class AliceEncryptionSessionInitializer @Inject constructor(
         return null
     }
 
-    suspend fun getInitialMessageEncryptionBundle(phoneNumber: String): InitialMessageEncryptionBundle? {
-
-        return withContext(Dispatchers.IO) {
-            val keyBundleDTO = getKeyBundleForUser(phoneNumber)
-
-            if (keyBundleDTO == null) {
-                Log.e(
-                    "EncryptionSessionManager",
-                    "Failed to get key bundle for phone: $phoneNumber"
-                )
-                return@withContext null
-            }
-
-            val signingKey = decode(keyBundleDTO.identityKey)
-            val message = decode(keyBundleDTO.signedPreKey)
-            val signature = decode(keyBundleDTO.signature)
-
-            if(!verifySignature(signingKey, message, signature)) {
-                Log.e("EncryptionSessionManager", "Signature verification failed.")
-                return@withContext null
-            }
-
-            val user = userRepository.getLocalUser()
-            if (user == null) {
-                Log.e("EncryptionSessionManager", "Failed to get local user.")
-                return@withContext null
-            }
-
-            val initializationKeyBundle = initializeKeyBundle(keyBundleDTO, user)
-
-            val symmetricKey = generateSymmetricKey(initializationKeyBundle)
-            val derivedKeys = KDF.calculateDerivedKeys(symmetricKey)
-
-            initializeInitialMessageEncryptionBundle(
-                keyBundleDTO,
-                user,
-                initializationKeyBundle,
-                derivedKeys.rootKey.keyBytes
-            )
-        }
-    }
-
     private fun initializeKeyBundle(keyBundleDTO: KeyBundleDTO, localUser: UserEntity): InitializationKeyBundle {
         val bobIdentityKey = keyBundleDTO.identityKey
         val bobSignedPreKey = keyBundleDTO.signedPreKey
@@ -92,17 +88,17 @@ class AliceEncryptionSessionInitializer @Inject constructor(
 
         if(keyBundleDTO.onetimePreKey != null) {
             Log.d("EncryptionSessionManager", "Bob's OPK is null.")
-            bobOpk = decode(keyBundleDTO.onetimePreKey)
+            bobOpk = Decoder.decode(keyBundleDTO.onetimePreKey)
         }
 
         val aliceEphemeralKeyPair = EccKeyHelper.generateSenderKeyPair()
         val aliceEphemeralPrivateKey = aliceEphemeralKeyPair.privateKey
         val aliceEphemeralPublicKey = aliceEphemeralKeyPair.publicKey
-        val alicePrivateIdentityKey = decode(localUser.privateIdentityKey)
+        val alicePrivateIdentityKey = Decoder.decode(localUser.privateIdentityKey)
 
         return InitializationKeyBundle(
-            decode(bobIdentityKey),
-            decode(bobSignedPreKey),
+            Decoder.decode(bobIdentityKey),
+            Decoder.decode(bobSignedPreKey),
             bobOpk,
             alicePrivateIdentityKey,
             aliceEphemeralPrivateKey,
@@ -143,8 +139,8 @@ class AliceEncryptionSessionInitializer @Inject constructor(
         symmetricKey: ByteArray
     ): InitialMessageEncryptionBundle {
 
-        val alicePublicIdentityKey = decode(localUser.publicIdentityKey)
-        val ad = alicePublicIdentityKey + decode(keyBundleDTO.identityKey)
+        val alicePublicIdentityKey = Decoder.decode(localUser.publicIdentityKey)
+        val ad = alicePublicIdentityKey + Decoder.decode(keyBundleDTO.identityKey)
 
         return InitialMessageEncryptionBundle(
             alicePublicIdentityKey,
@@ -159,7 +155,7 @@ class AliceEncryptionSessionInitializer @Inject constructor(
 
     private fun verifySignature(signingKey: ByteArray, message: ByteArray, signature: ByteArray) : Boolean{
 
-        return Curve25519.getInstance(BEST).verifySignature(signingKey, message, signature)
+        return EccKeyHelper.verifySignature(signingKey, message, signature)
     }
 
     class InitialMessageEncryptionBundle(
@@ -171,7 +167,4 @@ class AliceEncryptionSessionInitializer @Inject constructor(
         val ad: ByteArray
     )
 
-    private fun decode(string: String): ByteArray {
-        return Base64.getDecoder().decode(string)
-    }
 }

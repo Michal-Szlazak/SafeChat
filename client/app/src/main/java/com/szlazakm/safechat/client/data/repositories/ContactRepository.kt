@@ -1,14 +1,11 @@
 package com.szlazakm.safechat.client.data.repositories
 
 import android.content.Context
-import androidx.lifecycle.LiveData
 import androidx.room.Room
 import com.szlazakm.safechat.AppDatabase
-import com.szlazakm.safechat.client.data.entities.ContactEntity
 import com.szlazakm.safechat.client.data.entities.toContact
 import com.szlazakm.safechat.client.domain.Contact
 import com.szlazakm.safechat.client.domain.toContactEntity
-import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class ContactRepository @Inject constructor(context: Context) {

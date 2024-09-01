@@ -10,7 +10,6 @@ import com.szlazakm.safechat.client.data.repositories.UserRepository
 import com.szlazakm.safechat.client.data.services.MessageSaverManager
 import com.szlazakm.safechat.client.domain.Contact
 import com.szlazakm.safechat.client.domain.LocalUserData
-import com.szlazakm.safechat.client.presentation.MainScreenRoutes
 import com.szlazakm.safechat.client.presentation.UserCreationScreenRoutes
 import com.szlazakm.safechat.client.presentation.states.SignInState
 import com.szlazakm.safechat.utils.auth.PreKeyManager
@@ -42,9 +41,10 @@ class SignInViewModel @Inject constructor(
 
     suspend fun loadLocalUserData() {
         return (Dispatchers.IO) {
-            val user = userRepository.getLocalUser()
-            if(user != null) {
-                LocalUserData.getInstance().setUserData(user)
+            try {
+                val user = userRepository.getLocalUser()
+            } catch (e: Exception) {
+                Log.e("SignInViewModel", "Error while trying to load local user data: ${e.message}")
             }
         }
     }
@@ -89,7 +89,6 @@ class SignInViewModel @Inject constructor(
             firstName = state.value.firstName,
             lastName = state.value.lastName,
             phoneNumber = state.value.phoneNumber,
-//            identityKey = encode((keyPair.publicKey.publicKey as DjbECPublicKey).publicKey),
             identityKey = encode(keyPair.publicKey),
             pin = state.value.pin
         )
@@ -107,7 +106,6 @@ class SignInViewModel @Inject constructor(
                         firstName = state.value.firstName,
                         lastName = state.value.lastName,
                         createdAt = Date(),
-//                        identityKeyPair = encode(keyPair.serialize())
                         publicIdentityKey = encode(keyPair.publicKey),
                         privateIdentityKey = encode(keyPair.privateKey)
                     )

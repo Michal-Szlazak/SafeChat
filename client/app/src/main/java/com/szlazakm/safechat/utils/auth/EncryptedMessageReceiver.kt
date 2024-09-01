@@ -3,6 +3,8 @@ package com.szlazakm.safechat.utils.auth
 import android.util.Log
 import com.szlazakm.safechat.client.data.entities.EncryptionSessionEntity
 import com.szlazakm.safechat.client.data.repositories.EncryptionSessionRepository
+import com.szlazakm.safechat.utils.auth.utils.Decoder
+import com.szlazakm.safechat.utils.auth.utils.Encoder
 import com.szlazakm.safechat.webclient.dtos.OutputEncryptedMessageDTO
 import java.util.Base64
 import javax.crypto.Cipher
@@ -46,8 +48,8 @@ class EncryptedMessageReceiver @Inject constructor(
 
             val newEncryptionSession = EncryptionSessionEntity(
                 phoneNumber = senderPhoneNumber,
-                encode(symmetricKey),
-                encode(ad)
+                Encoder.encode(symmetricKey),
+                Encoder.encode(ad)
             )
 
             encryptionSessionRepository.createNewEncryptionSession(newEncryptionSession)
@@ -60,10 +62,10 @@ class EncryptedMessageReceiver @Inject constructor(
             return null
         }
 
-        symmetricKey = decode(encryptionSession.symmetricKey)
-        ad = decode(encryptionSession.ad)
+        symmetricKey = Decoder.decode(encryptionSession.symmetricKey)
+        ad = Decoder.decode(encryptionSession.ad)
 
-        return decryptMessage(symmetricKey, ad, decode(encryptedMessage.cipher))
+        return decryptMessage(symmetricKey, ad, Decoder.decode(encryptedMessage.cipher))
     }
 
     private fun decryptMessage(symmetricKey: ByteArray, ad: ByteArray, encryptedMessage: ByteArray): String {
@@ -86,13 +88,4 @@ class EncryptedMessageReceiver @Inject constructor(
         return plaintext.decodeToString()
 
     }
-
-    private fun encode(byteArray: ByteArray): String {
-        return Base64.getEncoder().encodeToString(byteArray)
-    }
-
-    private fun decode(encoded: String): ByteArray {
-        return Base64.getDecoder().decode(encoded)
-    }
-
 }

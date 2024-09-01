@@ -5,12 +5,6 @@ import com.szlazakm.safechat.client.data.entities.SPKEntity
 import com.szlazakm.safechat.client.data.repositories.PreKeyRepository
 import com.szlazakm.safechat.utils.auth.ecc.EccOpk
 import com.szlazakm.safechat.utils.auth.ecc.EccSignedKeyPair
-import org.whispersystems.libsignal.ecc.DjbECPrivateKey
-import org.whispersystems.libsignal.ecc.DjbECPublicKey
-import org.whispersystems.libsignal.ecc.ECKeyPair
-import org.whispersystems.libsignal.state.PreKeyRecord
-import org.whispersystems.libsignal.state.SignedPreKeyRecord
-import java.sql.Timestamp
 import java.util.Base64
 
 class PreKeyService(

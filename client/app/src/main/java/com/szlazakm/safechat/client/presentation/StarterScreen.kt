@@ -1,36 +1,30 @@
 package com.szlazakm.safechat.client.presentation
 
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
+import android.util.Log
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.navigation
 import com.szlazakm.safechat.client.presentation.components.starter.StarterViewModel
 import com.szlazakm.safechat.client.presentation.components.starter.WelcomeScreen
 
-@Composable
-fun StarterScreen(
-    navController: NavHostController = rememberNavController(),
-    starterViewModel: StarterViewModel = viewModel()
+fun NavGraphBuilder.starterGraph(
+    navController: NavHostController
 ) {
 
-    Scaffold { paddingValues ->
-
-        NavHost(
-            navController = navController,
-            startDestination = StarterRoutes.LoadingPage.route,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
+    navigation(
+        startDestination = StarterRoutes.LoadingPage.route,
+        route = StarterRoutes.Start.route
+    )
+         {
             composable(StarterRoutes.LoadingPage.route) {
+
+                val vm = hiltViewModel<StarterViewModel>()
+
                 WelcomeScreen(
-                    viewModel = starterViewModel,
+                    viewModel = vm,
                     onUserCreated = {
                         navController.navigate(StarterRoutes.MainScreen.route)
                     },
@@ -40,17 +34,23 @@ fun StarterScreen(
                 )
             }
             composable(StarterRoutes.UserCreation.route) {
-                UserCreationScreen()
+                navController.navigate(UserCreationScreenRoutes.UserCreation.route) {
+                    popUpTo(StarterRoutes.Start.route)
+                    launchSingleTop = true
+                }
             }
             composable(StarterRoutes.MainScreen.route) {
-                MainScreen()
+                navController.navigate(MainScreenRoutes.ContactList.route) {
+//                    popUpTo(StarterRoutes.Start.route)
+                    Log.i("StarterGraph", "Navigating to main screen")
+                    launchSingleTop = true
+                }
             }
         }
-
-    }
 }
 
-private enum class StarterRoutes (val route: String) {
+enum class StarterRoutes (val route: String) {
+    Start("start"),
     LoadingPage("loadingPage"),
     UserCreation("userCreation"),
     MainScreen("main")

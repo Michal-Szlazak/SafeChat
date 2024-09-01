@@ -3,6 +3,7 @@ package com.szlazakm.safechat.utils.auth
 import android.util.Log
 import com.szlazakm.safechat.client.data.repositories.UserRepository
 import com.szlazakm.safechat.client.data.services.PreKeyService
+import com.szlazakm.safechat.excpetions.LocalUserNotFoundException
 import com.szlazakm.safechat.utils.auth.ecc.EccKeyHelper
 import com.szlazakm.safechat.utils.auth.ecc.EccKeyPair
 import com.szlazakm.safechat.utils.auth.ecc.EccOpk
@@ -10,16 +11,9 @@ import com.szlazakm.safechat.webclient.dtos.OPKCreateDTO
 import com.szlazakm.safechat.webclient.dtos.OPKsCreateDTO
 import com.szlazakm.safechat.webclient.dtos.SPKCreateDTO
 import com.szlazakm.safechat.webclient.webservices.PreKeyWebService
-import org.whispersystems.libsignal.IdentityKeyPair
-import org.whispersystems.libsignal.ecc.Curve
-import org.whispersystems.libsignal.ecc.DjbECPublicKey
-import org.whispersystems.libsignal.state.PreKeyRecord
-import org.whispersystems.libsignal.state.SignedPreKeyRecord
-import org.whispersystems.libsignal.util.KeyHelper
 import java.util.Base64
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.random.Random
 
 @Singleton
 class PreKeyManager @Inject constructor(
@@ -30,17 +24,8 @@ class PreKeyManager @Inject constructor(
 
     fun checkAndProvideOPK() {
 
-        val localUser = userRepository.getLocalUser()
-
-        if(localUser == null) {
-            Log.d(
-                "PreKeyManager",
-                "Cannot check and provide OPKs - local user is not present."
-            )
-            return
-        }
-
         try {
+            val localUser = userRepository.getLocalUser()
             val response = preKeyWebService
                 .getUnusedOPKIdsByPhoneNumber(localUser.phoneNumber).execute()
 
@@ -72,10 +57,19 @@ class PreKeyManager @Inject constructor(
                 )
                 return
             }
-        } catch (e: Exception) {
+
+        } catch (e: LocalUserNotFoundException) {
+
             Log.e(
                 "PreKeyManager",
-                "Error while trying to get opks: ${e.message}"
+                "Error while trying to get local user: ${e.message}"
+            )
+            return
+        } catch (e: Exception) {
+
+            Log.e(
+                "PreKeyManager",
+                "Unknown Exception thrown in PreKeyManager: ${e.message}"
             )
             return
         }

@@ -3,6 +3,8 @@ package com.szlazakm.safechat.utils.auth
 import android.util.Log
 import com.szlazakm.safechat.client.data.entities.EncryptionSessionEntity
 import com.szlazakm.safechat.client.data.repositories.EncryptionSessionRepository
+import com.szlazakm.safechat.utils.auth.utils.Decoder
+import com.szlazakm.safechat.utils.auth.utils.Encoder
 import com.szlazakm.safechat.webclient.dtos.EncryptedMessageDTO
 import com.szlazakm.safechat.webclient.dtos.MessageDTO
 import kotlinx.coroutines.Dispatchers
@@ -50,9 +52,9 @@ class EncryptedMessageSender @Inject constructor(
                 initial = true,
                 messageDTO.from,
                 messageDTO.to,
-                encode(cipherText),
-                encode(initialMessageEncryptionBundle.aliceIdentityKey),
-                encode(initialMessageEncryptionBundle.aliceEphemeralPublicKey),
+                Encoder.encode(cipherText),
+                Encoder.encode(initialMessageEncryptionBundle.aliceIdentityKey),
+                Encoder.encode(initialMessageEncryptionBundle.aliceEphemeralPublicKey),
                 initialMessageEncryptionBundle.bobOpkId,
                 initialMessageEncryptionBundle.bobSignedPreKeyId
             )
@@ -61,8 +63,8 @@ class EncryptedMessageSender @Inject constructor(
 
             Log.d("EncryptedMessageSender", "Encryption session is not null $encryptionSession")
 
-            symmetricKey = decode(encryptionSession.symmetricKey)
-            ad = decode(encryptionSession.ad)
+            symmetricKey = Decoder.decode(encryptionSession.symmetricKey)
+            ad = Decoder.decode(encryptionSession.ad)
 
             val cipherText = encryptMessage(symmetricKey, ad, messageDTO.text)
 
@@ -70,7 +72,7 @@ class EncryptedMessageSender @Inject constructor(
                 initial = false,
                 messageDTO.from,
                 messageDTO.to,
-                encode(cipherText),
+                Encoder.encode(cipherText),
                 null,
                 null,
                 null,
@@ -86,8 +88,8 @@ class EncryptedMessageSender @Inject constructor(
     ) {
         val encryptionSessionEntity = EncryptionSessionEntity(
             phoneNumber,
-            encode(symmetricKey),
-            encode(ad)
+            Encoder.encode(symmetricKey),
+            Encoder.encode(ad)
         )
         (Dispatchers.IO) {
             encryptionSessionRepository.createNewEncryptionSession(encryptionSessionEntity)
@@ -118,13 +120,5 @@ class EncryptedMessageSender @Inject constructor(
         System.arraycopy(ciphertext, 0, encryptedMessage, ad.size + iv.size, ciphertext.size)
 
         return encryptedMessage
-    }
-
-    private fun encode(bytes: ByteArray): String {
-        return Base64.getEncoder().encodeToString(bytes)
-    }
-
-    private fun decode(encoded: String): ByteArray {
-        return Base64.getDecoder().decode(encoded)
     }
 }
