@@ -2,6 +2,7 @@ package com.szlazakm.chatserver.dtos;
 
 
 import lombok.Builder;
+import lombok.Getter;
 import lombok.Value;
 import lombok.extern.jackson.Jacksonized;
 

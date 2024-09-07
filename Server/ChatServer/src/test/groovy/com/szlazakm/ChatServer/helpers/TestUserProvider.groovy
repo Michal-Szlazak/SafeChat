@@ -1,6 +1,7 @@
 package com.szlazakm.ChatServer.helpers
 
 import com.szlazakm.chatserver.dtos.UserCreateDTO
+import com.szlazakm.chatserver.dtos.UserDTO
 import com.szlazakm.chatserver.entities.User
 
 class TestUserProvider {
@@ -13,6 +14,25 @@ class TestUserProvider {
             .identityKey("exampleIdKey")
             .pin("1234")
             .build()
+    }
+
+    static User createUserEntity() {
+        User.builder()
+                .userId(UUID.randomUUID())
+                .firstName("exampleName")
+                .lastName("exampleLastName")
+                .phoneNumber("123123123")
+                .identityKey("exampleIdKey")
+                .pin("1234")
+                .build()
+    }
+
+    static UserDTO createUserDTOFromUserEntity(User user) {
+        UserDTO.builder()
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .phoneNumber(user.getPhoneNumber())
+                .build();
     }
 
     static User createUserFromUserCreateDTO(UserCreateDTO userCreateDTO, UUID id, String encodedPin) {

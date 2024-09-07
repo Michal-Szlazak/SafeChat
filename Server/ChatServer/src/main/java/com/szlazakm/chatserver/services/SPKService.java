@@ -1,15 +1,19 @@
 package com.szlazakm.chatserver.services;
 
+import com.szlazakm.chatserver.utils.SignatureVerifier;
 import com.szlazakm.chatserver.dtos.SPKCreateOrUpdateDTO;
 import com.szlazakm.chatserver.entities.SPK;
 import com.szlazakm.chatserver.entities.User;
+import com.szlazakm.chatserver.exceptionHandling.exceptions.SignatureVerifierException;
 import com.szlazakm.chatserver.exceptionHandling.exceptions.UserNotFoundException;
 import com.szlazakm.chatserver.repositories.SPKRepository;
 import com.szlazakm.chatserver.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.security.InvalidKeyException;
 import java.security.SignatureException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Optional;
 
 @Service
@@ -18,6 +22,7 @@ public class SPKService {
 
     private final SPKRepository spkRepository;
     private final UserRepository userRepository;
+    private final SignatureVerifier signatureVerifier;
 
     public void createOrUpdateSPK(SPKCreateOrUpdateDTO spkCreateOrUpdateDTO) throws SignatureException {
 
@@ -44,12 +49,22 @@ public class SPKService {
             spk.setTimestamp(spkCreateOrUpdateDTO.getTimestamp());
         }
 
-        boolean isSignatureVerified = true; //TODO Verify the signature
+        boolean isSignatureVerified;
+
+        try {
+            isSignatureVerified = signatureVerifier.verifySignature(
+                    user.getIdentityKey(),
+                    spkCreateOrUpdateDTO.getSignedPreKey(),
+                    spkCreateOrUpdateDTO.getSignature()
+            );
+        } catch (InvalidKeySpecException | InvalidKeyException e) {
+            throw new SignatureVerifierException("Failed to verify the signed key. Reson: " + e.getMessage());
+        }
 
         if(isSignatureVerified) {
             spkRepository.save(spk);
         } else {
-            throw new SignatureException("Signature verification returned false.");
+            throw new SignatureVerifierException("Signature verification returned false.");
         }
     }
 }

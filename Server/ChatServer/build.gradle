@@ -3,6 +3,7 @@ plugins {
     id 'io.spring.dependency-management' version '1.1.0'
     id 'java'
     id 'groovy'
+    id 'jacoco'
 }
 
 group = 'com.szlazakm'
@@ -25,12 +26,13 @@ dependencies {
     implementation 'org.springframework.data:spring-data-jpa:3.2.3'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'com.h2database:h2'
-    implementation 'org.bouncycastle:bcprov-jdk18on:1.77'
+    implementation 'org.bouncycastle:bcprov-jdk18on:1.78.1'
     implementation 'org.mapstruct:mapstruct:1.5.5.Final'
     implementation 'org.springframework.security:spring-security-core:6.2.1'
     implementation 'org.springframework.security:spring-security-web:6.2.1'
     implementation 'org.whispersystems:signal-protocol-java:2.8.1'
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.4.0'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
+
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.spockframework:spock-core:2.4-M4-groovy-4.0'
@@ -46,4 +48,12 @@ bootJar {
 
 test {
     useJUnitPlatform()
+}
+
+jacocoTestReport {
+    reports {
+        xml.required = false
+        csv.required = false
+        html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
+    }
 }
