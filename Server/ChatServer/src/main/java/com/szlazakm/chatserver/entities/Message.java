@@ -22,6 +22,7 @@ public class Message {
     private boolean isInitial;
     private String fromPhoneNumber;
     private String toPhoneNumber;
+    @Column(name = "cipher", columnDefinition = "LONGTEXT")
     private String cipher;
     private String aliceIdentityPublicKey;
     private String aliceEphemeralPublicKey;

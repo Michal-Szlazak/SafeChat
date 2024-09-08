@@ -1,5 +1,6 @@
 package com.szlazakm.safechat.client.presentation.components.starter
 
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -29,7 +30,10 @@ fun WelcomeScreen(
     var localUserPresent by remember { mutableStateOf(false) }
 
     // Simulate checking if local user is present in the database
-    LaunchedEffect(true) {
+
+
+    LaunchedEffect(Unit) {
+        Log.i("Welcome Screen", "Checking if user exists")
         localUserPresent = viewModel.isUserCreated()
         isLoading = false
         delay(1000L)
@@ -40,7 +44,9 @@ fun WelcomeScreen(
         } else {
             onUserNotCreated()
         }
+
     }
+
 
     Scaffold(
         content = {paddingValues ->

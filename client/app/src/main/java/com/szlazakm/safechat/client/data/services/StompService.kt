@@ -8,8 +8,8 @@ import ua.naiksoftware.stomp.StompClient
 class StompService {
 
     private var stompClient: StompClient? = null
-    private val serverUrl = "ws://192.168.0.230:8080/ws" //FOR PC
-//private val serverUrl = "ws://10.67.43.127:8080/ws" //For laptop
+//    private val serverUrl = "ws://192.168.0.230:8080/ws" //FOR PC
+    private val serverUrl = "ws://10.0.2.2:8080/ws" //For laptop
 
     fun connect() {
         try {

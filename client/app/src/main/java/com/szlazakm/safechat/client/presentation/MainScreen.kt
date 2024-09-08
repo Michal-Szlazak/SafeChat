@@ -31,12 +31,10 @@ fun NavGraphBuilder.mainGraph(
                 Log.i("MainScreen", "Navigating to contact list")
 
                 val contactListViewModel = hiltViewModel<ContactListViewModel>()
-//                val parentEntry = remember(navController.currentBackStackEntry) {
-//                    navController.getBackStackEntry(UserCreationScreenRoutes.MainScreen.route)
-//                }
-//                val chatViewModel: ChatViewModel = hiltViewModel(parentEntry)
-
-                val chatViewModel = hiltViewModel<ChatViewModel>()
+                val parentEntry = remember(navController.currentBackStackEntry) {
+                    navController.getBackStackEntry(UserCreationScreenRoutes.MainScreen.route)
+                }
+                val chatViewModel: ChatViewModel = hiltViewModel(parentEntry)
 
                 contactListViewModel.loadContactList()
 
@@ -53,12 +51,10 @@ fun NavGraphBuilder.mainGraph(
                 Log.i("MainScreen", "Navigating to add contact")
 
                 val addContactViewModel = hiltViewModel<AddContactViewModel>()
-//                val parentEntry = remember(navController.currentBackStackEntry) {
-//                    navController.getBackStackEntry(UserCreationScreenRoutes.MainScreen.route)
-//                }
-//                val chatViewModel: ChatViewModel = hiltViewModel(parentEntry)
-
-                val chatViewModel = hiltViewModel<ChatViewModel>()
+                val parentEntry = remember(navController.currentBackStackEntry) {
+                    navController.getBackStackEntry(UserCreationScreenRoutes.MainScreen.route)
+                }
+                val chatViewModel: ChatViewModel = hiltViewModel(parentEntry)
 
                 AddContactScreen(
                     navController = navController,
@@ -74,12 +70,10 @@ fun NavGraphBuilder.mainGraph(
             ) { backStackEntry ->
                 val contactPhoneNumber = backStackEntry.arguments?.getString("phoneNumber")
 
-//                val parentEntry = remember(navController.currentBackStackEntry) {
-//                    navController.getBackStackEntry(UserCreationScreenRoutes.MainScreen.route)
-//                }
-//                val chatViewModel: ChatViewModel = hiltViewModel(parentEntry)
-
-                val chatViewModel = hiltViewModel<ChatViewModel>()
+                val parentEntry = remember(navController.currentBackStackEntry) {
+                    navController.getBackStackEntry(UserCreationScreenRoutes.MainScreen.route)
+                }
+                val chatViewModel: ChatViewModel = hiltViewModel(parentEntry)
 
                 chatViewModel.loadChat()
 
@@ -90,7 +84,7 @@ fun NavGraphBuilder.mainGraph(
 
 enum class MainScreenRoutes (val route: String) {
     MainScreen("main"),
-    ContactList("contactList"),
+    ContactList("contact-list"),
     Chat("chat/{phoneNumber}"),
-    AddContact("addContact")
+    AddContact("add-contact")
 }
