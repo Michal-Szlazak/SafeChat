@@ -1,5 +1,6 @@
 package com.szlazakm.safechat.client.presentation
 
+import android.util.Log
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -36,7 +37,7 @@ fun NavGraphBuilder.userCreationGraph(
     )
      {
         composable(UserCreationScreenRoutes.SignIn.route) {
-
+            Log.i("UserCreationScreen", "Navigating to sign in")
             val parentEntry = remember(navController.currentBackStackEntry) {
                 navController.getBackStackEntry(UserCreationScreenRoutes.SignIn.route)
             }

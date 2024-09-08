@@ -23,26 +23,43 @@ fun NavGraphBuilder.starterGraph(
 
                 val vm = hiltViewModel<StarterViewModel>()
 
+                navController.navigate(StarterRoutes.MainScreen.route) {
+                    Log.i("StarterGraph", "Navigating to main screen after user creation checked")
+                            popUpTo(StarterRoutes.Start.route) { inclusive = true }
+                            launchSingleTop = true
+                }
+
                 WelcomeScreen(
                     viewModel = vm,
                     onUserCreated = {
-                        navController.navigate(StarterRoutes.MainScreen.route)
+                        navController.navigate(StarterRoutes.MainScreen.route) {
+                            Log.i("StarterGraph", "Navigating to main screen after user creation checked")
+//                            popUpTo(StarterRoutes.Start.route) { inclusive = true }
+//                            launchSingleTop = true
+                        }
                     },
                     onUserNotCreated = {
-                        navController.navigate(StarterRoutes.UserCreation.route)
+                        navController.navigate(StarterRoutes.UserCreation.route) {
+                            Log.i("StarterGraph", "Navigating to user creation after user not exists checked")
+                            popUpTo(StarterRoutes.Start.route) { inclusive = true }
+                            launchSingleTop = true
+                        }
                     }
                 )
             }
             composable(StarterRoutes.UserCreation.route) {
                 navController.navigate(UserCreationScreenRoutes.UserCreation.route) {
-                    popUpTo(StarterRoutes.Start.route)
-                    launchSingleTop = true
+                    Log.i("StarterGraph", "Navigating to user creation")
+//                    popUpTo(StarterRoutes.Start.route) { inclusive = true }
+//                    navController.popBackStack()
+//                    launchSingleTop = true
                 }
             }
             composable(StarterRoutes.MainScreen.route) {
                 navController.navigate(MainScreenRoutes.ContactList.route) {
-//                    popUpTo(StarterRoutes.Start.route)
                     Log.i("StarterGraph", "Navigating to main screen")
+//                    popUpTo(StarterRoutes.Start.route) { inclusive = true }
+//                    navController.popBackStack()
                     launchSingleTop = true
                 }
             }
@@ -51,7 +68,7 @@ fun NavGraphBuilder.starterGraph(
 
 enum class StarterRoutes (val route: String) {
     Start("start"),
-    LoadingPage("loadingPage"),
-    UserCreation("userCreation"),
+    LoadingPage("loading_page"),
+    UserCreation("user_creation"),
     MainScreen("main")
 }
