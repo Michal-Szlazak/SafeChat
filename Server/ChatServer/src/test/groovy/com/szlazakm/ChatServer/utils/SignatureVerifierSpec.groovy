@@ -4,13 +4,7 @@ import com.szlazakm.ChatServer.helpers.TestSignatureProvider
 import com.szlazakm.chatserver.utils.SignatureVerifier
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import spock.lang.Specification
-
-import java.security.KeyFactory
-import java.security.PublicKey
 import java.security.Security
-import java.security.Signature
-import java.security.spec.KeySpec
-import java.security.spec.X509EncodedKeySpec
 
 class SignatureVerifierSpec extends Specification{
 

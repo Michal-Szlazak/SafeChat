@@ -1,6 +1,8 @@
 package com.szlazakm.chatserver.services;
 
 import com.szlazakm.chatserver.dtos.*;
+import com.szlazakm.chatserver.dtos.response.KeyBundleDTO;
+import com.szlazakm.chatserver.dtos.response.UserDTO;
 import com.szlazakm.chatserver.entities.OPK;
 import com.szlazakm.chatserver.entities.SPK;
 import com.szlazakm.chatserver.entities.User;

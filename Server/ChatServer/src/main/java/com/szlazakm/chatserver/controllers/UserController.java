@@ -1,6 +1,8 @@
 package com.szlazakm.chatserver.controllers;
 
 import com.szlazakm.chatserver.dtos.*;
+import com.szlazakm.chatserver.dtos.response.KeyBundleDTO;
+import com.szlazakm.chatserver.dtos.response.UserDTO;
 import com.szlazakm.chatserver.services.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

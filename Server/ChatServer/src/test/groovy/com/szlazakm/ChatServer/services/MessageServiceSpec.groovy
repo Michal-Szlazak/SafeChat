@@ -39,7 +39,7 @@ class MessageServiceSpec extends Specification{
         1 * messageRepository.deleteById(messageId)
     }
 
-    def "should delete messages from db"() {
+    def "should return and delete messages from db"() {
 
         given:
         def messages = TestMessageProvider.messageList

@@ -1,5 +1,6 @@
-package com.szlazakm.chatserver.dtos;
+package com.szlazakm.chatserver.dtos.response;
 
+import com.szlazakm.chatserver.dtos.EncryptedMessageDTO;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;

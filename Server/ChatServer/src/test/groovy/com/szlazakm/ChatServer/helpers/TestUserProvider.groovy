@@ -1,7 +1,7 @@
 package com.szlazakm.ChatServer.helpers
 
 import com.szlazakm.chatserver.dtos.UserCreateDTO
-import com.szlazakm.chatserver.dtos.UserDTO
+import com.szlazakm.chatserver.dtos.response.UserDTO
 import com.szlazakm.chatserver.entities.User
 
 class TestUserProvider {

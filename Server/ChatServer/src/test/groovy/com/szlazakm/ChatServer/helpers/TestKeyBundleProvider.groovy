@@ -1,6 +1,6 @@
 package com.szlazakm.ChatServer.helpers
 
-import com.szlazakm.chatserver.dtos.KeyBundleDTO
+import com.szlazakm.chatserver.dtos.response.KeyBundleDTO
 import com.szlazakm.chatserver.entities.OPK
 import com.szlazakm.chatserver.entities.SPK
 import com.szlazakm.chatserver.entities.User

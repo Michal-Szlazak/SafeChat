@@ -1,4 +1,4 @@
-package com.szlazakm.chatserver.dtos;
+package com.szlazakm.chatserver.dtos.response;
 
 import lombok.Builder;
 import lombok.Value;

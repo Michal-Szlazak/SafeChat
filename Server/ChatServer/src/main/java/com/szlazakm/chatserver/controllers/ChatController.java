@@ -2,8 +2,8 @@ package com.szlazakm.chatserver.controllers;
 
 import com.szlazakm.chatserver.dtos.MessageAcknowledgementDTO;
 import com.szlazakm.chatserver.dtos.EncryptedMessageDTO;
-import com.szlazakm.chatserver.dtos.MessageSentResponseDto;
-import com.szlazakm.chatserver.dtos.OutputEncryptedMessageDTO;
+import com.szlazakm.chatserver.dtos.response.MessageSentResponseDto;
+import com.szlazakm.chatserver.dtos.response.OutputEncryptedMessageDTO;
 import com.szlazakm.chatserver.entities.Message;
 import com.szlazakm.chatserver.services.MessageService;
 import lombok.RequiredArgsConstructor;

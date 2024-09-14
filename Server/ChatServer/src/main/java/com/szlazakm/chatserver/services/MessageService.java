@@ -1,7 +1,7 @@
 package com.szlazakm.chatserver.services;
 
 import com.szlazakm.chatserver.dtos.MessageAcknowledgementDTO;
-import com.szlazakm.chatserver.dtos.OutputEncryptedMessageDTO;
+import com.szlazakm.chatserver.dtos.response.OutputEncryptedMessageDTO;
 import com.szlazakm.chatserver.entities.Message;
 import com.szlazakm.chatserver.repositories.MessageRepository;
 import lombok.RequiredArgsConstructor;

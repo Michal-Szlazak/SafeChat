@@ -1,7 +1,7 @@
 package com.szlazakm.ChatServer.helpers
 
 import com.szlazakm.chatserver.dtos.EncryptedMessageDTO
-import com.szlazakm.chatserver.dtos.OutputEncryptedMessageDTO
+import com.szlazakm.chatserver.dtos.response.OutputEncryptedMessageDTO
 import com.szlazakm.chatserver.entities.Message
 
 class TestMessageProvider {
