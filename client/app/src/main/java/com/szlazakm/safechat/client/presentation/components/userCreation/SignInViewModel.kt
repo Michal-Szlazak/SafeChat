@@ -10,6 +10,7 @@ import com.szlazakm.safechat.client.data.repositories.UserRepository
 import com.szlazakm.safechat.client.data.services.MessageSaverManager
 import com.szlazakm.safechat.client.domain.Contact
 import com.szlazakm.safechat.client.domain.LocalUserData
+import com.szlazakm.safechat.client.presentation.MainScreenRoutes
 import com.szlazakm.safechat.client.presentation.UserCreationScreenRoutes
 import com.szlazakm.safechat.client.presentation.states.SignInState
 import com.szlazakm.safechat.utils.auth.PreKeyManager
@@ -79,7 +80,7 @@ class SignInViewModel @Inject constructor(
 
     fun saveUser(
         navController: NavController,
-        successDestination: UserCreationScreenRoutes,
+        successDestination: MainScreenRoutes,
         failureDestination: UserCreationScreenRoutes
     ) {
 
@@ -109,6 +110,8 @@ class SignInViewModel @Inject constructor(
                         publicIdentityKey = encode(keyPair.publicKey),
                         privateIdentityKey = encode(keyPair.privateKey)
                     )
+
+                    LocalUserData.getInstance().setUserData(user)
 
                     val localUserContact = Contact(
                         phoneNumber = state.value.phoneNumber,

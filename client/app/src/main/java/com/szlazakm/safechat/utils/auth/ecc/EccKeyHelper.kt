@@ -6,6 +6,7 @@ import java.security.KeyPairGenerator
 import java.security.SecureRandom
 import java.security.Signature
 import java.security.spec.PKCS8EncodedKeySpec
+import java.security.spec.X509EncodedKeySpec
 
 class EccKeyHelper {
 
@@ -21,8 +22,6 @@ class EccKeyHelper {
         )
 
         fun generateKeyPair(): EccKeyPair {
-
-//            val curve25519KeyPair = Curve25519.getInstance(BEST).generateKeyPair()
             val keyPair = keyPairGenerator.generateKeyPair()
             val privKeyBytes = keyPair.private.encoded
             val pubKeyBytes = keyPair.public.encoded
@@ -31,23 +30,9 @@ class EccKeyHelper {
 
         fun generateSignedKeyPair(privateIdentityKey: ByteArray): EccSignedKeyPair {
 
-//            val keyId = SecureRandom().nextInt()
-//            val curve25519KeyPair = Curve25519.getInstance(BEST).generateKeyPair()
-//            val signature = Curve25519.getInstance(BEST)
-//                .calculateSignature(privateIdentityKey, curve25519KeyPair.publicKey)
-//
-//            val timestamp: Long = System.currentTimeMillis()
-//            return EccSignedKeyPair(
-//                curve25519KeyPair.privateKey, curve25519KeyPair.publicKey, signature, keyId, timestamp
-//            )
-
-            // Decode the private key
-
             Log.i("EccKeyHelper", "Generating signed key pair")
 
-            val keySpec = PKCS8EncodedKeySpec(privateIdentityKey)
-            val keyFactory = KeyFactory.getInstance("EC", "BC")
-            val privateKey = keyFactory.generatePrivate(keySpec)
+            val privateKey = KeyConverter.toPrivateKey(privateIdentityKey)
 
             Log.i("EccKeyHelper", "Private signed key: $privateKey")
 
@@ -90,9 +75,7 @@ class EccKeyHelper {
 
         fun verifySignature(signingKey: ByteArray, message: ByteArray, signature: ByteArray) : Boolean {
 
-            val keySpec = PKCS8EncodedKeySpec(signingKey)
-            val keyFactory = KeyFactory.getInstance("EC", "BC")
-            val publicKey = keyFactory.generatePublic(keySpec)
+            val publicKey = KeyConverter.toPublicKey(signingKey)
 
             signatureGenerator.initVerify(publicKey)
             signatureGenerator.update(message)

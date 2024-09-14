@@ -32,10 +32,9 @@ fun NavGraphBuilder.userCreationGraph(
 ) {
 
     navigation(
-        startDestination = UserCreationScreenRoutes.SignIn.route,
+        startDestination = UserCreationScreenRoutes.MainScreen.route,
         route = UserCreationScreenRoutes.UserCreation.route
-    )
-     {
+    ) {
         composable(UserCreationScreenRoutes.SignIn.route) {
             Log.i("UserCreationScreen", "Navigating to sign in")
             val parentEntry = remember(navController.currentBackStackEntry) {
@@ -126,7 +125,7 @@ fun NavGraphBuilder.userCreationGraph(
                      if(it) {
                          vm.saveUser(
                              navController = navController,
-                             successDestination = UserCreationScreenRoutes.MainScreen,
+                             successDestination = MainScreenRoutes.ContactList,
                              failureDestination = UserCreationScreenRoutes.SignIn
                          )
                      } else {
@@ -148,11 +147,11 @@ fun NavGraphBuilder.userCreationGraph(
 }
 
 enum class UserCreationScreenRoutes(val route: String) {
-    UserCreation("user_creation"),
-    SignIn("sing_in"),
-    VerifyPhoneNumber("verify_phone_number"),
-    SignInUserDetails("user_details"),
+    UserCreation("user-creation"),
+    SignIn("sing-in"),
+    VerifyPhoneNumber("verify-phone-number"),
+    SignInUserDetails("user-details"),
     SignInPin("pin"),
-    VerifyPin("verify_pin"),
+    VerifyPin("verify-pin"),
     MainScreen("main")
 }
