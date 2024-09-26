@@ -9,6 +9,8 @@ import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.web.access.expression.DefaultWebSecurityExpressionHandler;
 
 import java.security.Security;
+import java.time.Instant;
+import java.time.InstantSource;
 
 @SpringBootApplication
 public class ChatServerApplication {
@@ -31,5 +33,10 @@ public class ChatServerApplication {
         DefaultWebSecurityExpressionHandler expressionHandler = new DefaultWebSecurityExpressionHandler();
         expressionHandler.setRoleHierarchy(roleHierarchy());
         return expressionHandler;
+    }
+
+    @Bean
+    public Instant getInstant() {
+        return InstantSource.system().instant();
     }
 }

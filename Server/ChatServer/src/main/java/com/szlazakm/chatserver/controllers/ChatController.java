@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import org.whispersystems.libsignal.logging.Log;
 
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -23,12 +24,15 @@ public class ChatController {
 
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final MessageService messageService;
+    private final Instant instant;
 
     @PostMapping("/room")
     @ResponseStatus(HttpStatus.CREATED)
-    public MessageSentResponseDto sendSpecific(@RequestBody EncryptedMessageDTO msg){
+    public MessageSentResponseDto sendMessage(@RequestBody EncryptedMessageDTO msg){
 
-        String timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+        String timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(
+                new Date(instant.getEpochSecond() * 1000)
+        );
 
         Message message = Message.builder()
                 .isInitial(msg.isInitial())

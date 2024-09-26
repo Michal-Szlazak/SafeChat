@@ -7,11 +7,41 @@ import com.szlazakm.chatserver.services.MessageService
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import spock.lang.Specification
 
+import java.text.SimpleDateFormat
+import java.time.Instant
+
 class ChatControllerSpec extends Specification{
 
     def simpMessagingTemplate = Mock(SimpMessagingTemplate)
-    def messagingService = Mock(MessageService)
-    def chatController = new ChatController(simpMessagingTemplate, messagingService)
+    def messageService = Mock(MessageService)
+    def instant = Mock(Instant)
+    def chatController = new ChatController(simpMessagingTemplate, messageService, instant)
+
+    def "should send message to user topic and return timestamp from server"() {
+
+        given:
+        def messageId = UUID.randomUUID()
+        def encryptedMessageDTO = TestMessageProvider.getEncryptedMessageDTO()
+
+        def timestampLong = 1726413444L
+        def timestampString = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(
+                new Date(timestampLong * 1000)
+        )
+
+        def messageEntity = TestMessageProvider.getMessageFromEncryptedMessageDTO(encryptedMessageDTO, timestampString)
+        def outputMessageDTO = TestMessageProvider.getOutputEncryptedMessageDTO(
+                encryptedMessageDTO, messageId, timestampString
+        )
+
+        instant.getEpochSecond() >> timestampLong
+        1 * messageService.saveMessage(messageEntity) >> messageId
+        when:
+        def returnedTimestamp = chatController.sendMessage(encryptedMessageDTO)
+
+        then:
+        1 * simpMessagingTemplate.convertAndSend("/user/queue/" + encryptedMessageDTO.getTo(), outputMessageDTO)
+        returnedTimestamp.timestamp == timestampString
+    }
 
     def "should call message acknowledge on POST request"() {
 
@@ -25,7 +55,7 @@ class ChatControllerSpec extends Specification{
         chatController.acknowledgeMessage(messageAcknowledgement)
 
         then:
-        1 * messagingService.acknowledgeMessage(messageAcknowledgement)
+        1 * messageService.acknowledgeMessage(messageAcknowledgement)
     }
 
     def "should return list of OutputEncryptedMessageDTO's"() {
@@ -39,7 +69,7 @@ class ChatControllerSpec extends Specification{
         def expectedMessages = chatController.getAllNewMessages(toPhoneNumber)
 
         then:
-        1 * messagingService.getAllNewMessages(toPhoneNumber) >> returnedMessages
+        1 * messageService.getAllNewMessages(toPhoneNumber) >> returnedMessages
         expectedMessages == returnedMessages
     }
 

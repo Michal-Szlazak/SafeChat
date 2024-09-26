@@ -46,4 +46,59 @@ class TestMessageProvider {
         ).toList()
     }
 
+    static EncryptedMessageDTO getEncryptedMessageDTO() {
+        EncryptedMessageDTO.builder()
+            .id(null)
+            .initial(true)
+            .from("123")
+            .to("321")
+            .cipher("cipher")
+            .aliceIdentityPublicKey("alice identity key")
+            .aliceEphemeralPublicKey("alice ephermal key")
+            .bobSpkId(1)
+            .bobOpkId(1)
+            .build()
+    }
+
+    static Message getMessageFromEncryptedMessageDTO(EncryptedMessageDTO msg, String timestamp) {
+        Message.builder()
+                .isInitial(msg.isInitial())
+                .toPhoneNumber(msg.getTo())
+                .fromPhoneNumber(msg.getFrom())
+                .cipher(msg.getCipher())
+                .aliceIdentityPublicKey(msg.getAliceIdentityPublicKey())
+                .aliceEphemeralPublicKey(msg.getAliceEphemeralPublicKey())
+                .bobSpkId(msg.getBobSpkId())
+                .bobOpkId(msg.getBobOpkId())
+                .timestamp(timestamp)
+                .build()
+    }
+
+    static OutputEncryptedMessageDTO getOutputEncryptedMessageDTO(EncryptedMessageDTO msg, UUID messageId, String timestamp) {
+
+        if(msg.isInitial()) {
+            return new OutputEncryptedMessageDTO(
+                    messageId,
+                    true,
+                    msg.getFrom(),
+                    msg.getTo(),
+                    msg.getCipher(),
+                    msg.getAliceIdentityPublicKey(),
+                    msg.getAliceEphemeralPublicKey(),
+                    msg.getBobOpkId(),
+                    msg.getBobSpkId(),
+                    timestamp
+            );
+        } else {
+            return new OutputEncryptedMessageDTO(
+                    messageId,
+                    false,
+                    msg.getFrom(),
+                    msg.getTo(),
+                    msg.getCipher(),
+                    timestamp
+            );
+        }
+    }
+
 }

@@ -9,9 +9,6 @@ class KDF {
 
     companion object {
         fun calculateDerivedKeys(masterSecret: ByteArray): DerivedKeys {
-//            val kdf: HKDF = HKDFv3()
-//            val derivedSecretBytes: ByteArray =
-//                kdf.deriveSecrets(masterSecret, salt, 64)
 
             val kdf = HKDF.fromHmacSha256()
             val salt = ByteArray(32)
