@@ -6,7 +6,6 @@ import com.szlazakm.safechat.client.data.repositories.EncryptionSessionRepositor
 import com.szlazakm.safechat.utils.auth.utils.Decoder
 import com.szlazakm.safechat.utils.auth.utils.Encoder
 import com.szlazakm.safechat.webclient.dtos.OutputEncryptedMessageDTO
-import java.util.Base64
 import javax.crypto.Cipher
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
@@ -14,7 +13,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class EncryptedMessageReceiver @Inject constructor(
+class MessageDecryptor @Inject constructor(
     private val encryptionSessionRepository: EncryptionSessionRepository,
     private val bobDecryptionSessionInitializer: BobDecryptionSessionInitializer
 ) {
@@ -31,7 +30,7 @@ class EncryptedMessageReceiver @Inject constructor(
         if (encryptedMessage.initial) {
 
             if (encryptionSession != null) {
-                Log.e("EncryptedMessageReceiver", "Encryption session already exists. Deleting...")
+                Log.e("MessageDecryptor", "Encryption session already exists. Deleting...")
                 encryptionSessionRepository.deleteEncryptionSessionByPhoneNumber(senderPhoneNumber)
             }
 
@@ -39,7 +38,7 @@ class EncryptedMessageReceiver @Inject constructor(
                 bobDecryptionSessionInitializer.createSymmetricKey(encryptedMessage)
 
             if (bobInitializeSessionBundle == null) {
-                Log.e("EncryptedMessageReceiver", "Failed to create shared secret.")
+                Log.e("MessageDecryptor", "Failed to create shared secret.")
                 return null
             }
 
@@ -58,7 +57,7 @@ class EncryptedMessageReceiver @Inject constructor(
         }
 
         if (encryptionSession == null) {
-            Log.e("EncryptedMessageReceiver", "Encryption session not found.")
+            Log.e("MessageDecryptor", "Encryption session not found.")
             return null
         }
 

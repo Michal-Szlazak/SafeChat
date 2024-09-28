@@ -16,7 +16,7 @@ import com.szlazakm.safechat.client.presentation.states.ChatState
 import com.szlazakm.safechat.webclient.dtos.MessageDTO
 import com.szlazakm.safechat.webclient.dtos.MessageSentResponseDTO
 import com.szlazakm.safechat.webclient.webservices.ChatWebService
-import com.szlazakm.safechat.utils.auth.EncryptedMessageSender
+import com.szlazakm.safechat.utils.auth.MessageEncryptor
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,7 +34,7 @@ class ChatViewModel @Inject constructor(
     private val contactRepository: ContactRepository,
     private val userRepository: UserRepository,
     private val retrofit: Retrofit,
-    private val encryptedMessageSender: EncryptedMessageSender
+    private val messageEncryptor: MessageEncryptor
 ): ViewModel(), MessageListener {
 
     private val chatState: MutableStateFlow<ChatState> = MutableStateFlow(ChatState())
@@ -120,7 +120,7 @@ class ChatViewModel @Inject constructor(
 
                     withContext(Dispatchers.IO) {
                         try {
-                            val encryptedMessage = encryptedMessageSender.encryptMessage(messageDTO)
+                            val encryptedMessage = messageEncryptor.encryptMessage(messageDTO)
                             if(encryptedMessage == null) {
                                 Log.e("ChatViewModel", "EncryptedMessage is null. Sending aborted")
                                 return@withContext

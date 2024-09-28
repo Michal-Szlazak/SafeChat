@@ -11,7 +11,7 @@ import com.szlazakm.safechat.client.data.repositories.ContactRepository
 import com.szlazakm.safechat.client.data.repositories.MessageRepository
 import com.szlazakm.safechat.client.data.repositories.UserRepository
 import com.szlazakm.safechat.client.domain.Contact
-import com.szlazakm.safechat.utils.auth.EncryptedMessageReceiver
+import com.szlazakm.safechat.utils.auth.MessageDecryptor
 import com.szlazakm.safechat.webclient.dtos.MessageAcknowledgementDTO
 import com.szlazakm.safechat.webclient.dtos.OutputEncryptedMessageDTO
 import com.szlazakm.safechat.webclient.dtos.UserDTO
@@ -39,7 +39,7 @@ class MessageSaverService : Service(){
     @Inject
     lateinit var retrofit: Retrofit
     @Inject
-    lateinit var encryptedMessageReceiver: EncryptedMessageReceiver
+    lateinit var messageDecryptor: MessageDecryptor
 
     private val stompService: StompService = StompService()
     private val gson: Gson = Gson()
@@ -193,7 +193,7 @@ class MessageSaverService : Service(){
 
     private suspend fun decryptMessage(outputEncryptedMessageDTO: OutputEncryptedMessageDTO): MessageEntity? {
 
-        val decryptedMessage = encryptedMessageReceiver.decryptMessage(outputEncryptedMessageDTO)
+        val decryptedMessage = messageDecryptor.decryptMessage(outputEncryptedMessageDTO)
 
         if(decryptedMessage == null) {
             Log.e(
