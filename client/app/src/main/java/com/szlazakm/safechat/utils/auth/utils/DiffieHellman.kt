@@ -5,6 +5,12 @@ import javax.crypto.KeyAgreement
 
 class DiffieHellman {
 
+    companion object {
+        fun createSharedSecret(privateKeyBytes: ByteArray, publicKeyBytes: ByteArray): ByteArray {
+            return DiffieHellman().createSharedSecret(privateKeyBytes, publicKeyBytes)
+        }
+    }
+
 
     fun createSharedSecret(privateKeyBytes: ByteArray, publicKeyBytes: ByteArray): ByteArray {
 
@@ -15,7 +21,6 @@ class DiffieHellman {
         keyAgreement.init(privateKey)
         keyAgreement.doPhase(publicKey, true)
         return keyAgreement.generateSecret()
-//        return Curve25519.getInstance(Curve25519.BEST).calculateAgreement(publicKeyBytes, privateKeyBytes)
     }
 
 }

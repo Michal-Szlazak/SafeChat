@@ -35,17 +35,14 @@ class KDF {
         }
 
         fun deriveSecrets(
-            inputKeyMaterial: ByteArray?,
-            info: ByteArray?,
+            inputKeyMaterial: ByteArray,
+            info: ByteArray,
+            salt: ByteArray,
             outputLength: Int
         ): ByteArray {
 
             val digest: Digest = SHA256Digest()
             val hkdf = HKDFBytesGenerator(digest)
-//            val salt = ByteArray(HASH_OUTPUT_SIZE) TODO make it not constant
-            val salt = ByteArray(SALT_SIZE)
-//            val random = SecureRandom()
-//            random.nextBytes(salt)
 
             // extract
             hkdf.init(HKDFParameters(inputKeyMaterial, salt, info))
@@ -55,6 +52,16 @@ class KDF {
             hkdf.generateBytes(output, 0, outputLength)
 
             return output
+        }
+
+        fun deriveSecrets(
+            inputKeyMaterial: ByteArray,
+            info: ByteArray,
+            outputLength: Int
+        ): ByteArray {
+
+            val salt = ByteArray(SALT_SIZE)
+            return deriveSecrets(inputKeyMaterial, info, salt, outputLength)
         }
     }
 
