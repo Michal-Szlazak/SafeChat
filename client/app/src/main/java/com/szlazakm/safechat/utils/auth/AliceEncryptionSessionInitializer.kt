@@ -3,6 +3,7 @@ package com.szlazakm.safechat.utils.auth
 import android.util.Log
 import com.szlazakm.safechat.client.data.entities.UserEntity
 import com.szlazakm.safechat.client.data.repositories.UserRepository
+import com.szlazakm.safechat.utils.auth.ecc.ChainKey
 import com.szlazakm.safechat.utils.auth.ecc.EccKeyHelper
 import com.szlazakm.safechat.utils.auth.utils.Decoder
 import com.szlazakm.safechat.utils.auth.utils.DiffieHellman
@@ -48,7 +49,8 @@ class AliceEncryptionSessionInitializer @Inject constructor(
             val initializationKeyBundle = initializeKeyBundle(keyBundleDTO, user)
 
             val symmetricKey = generateSymmetricKey(initializationKeyBundle)
-            val derivedKeys = KDF.calculateDerivedKeys(symmetricKey)
+            val derivedKeys = KDF.deriveSecrets(
+                symmetricKey)
 
             initializeInitialMessageEncryptionBundle(
                 keyBundleDTO,
@@ -163,8 +165,7 @@ class AliceEncryptionSessionInitializer @Inject constructor(
         val aliceEphemeralPublicKey: ByteArray,
         val bobOpkId: Int?,
         val bobSignedPreKeyId: Int,
-        val symmetricKey: ByteArray,
-        val ad: ByteArray
+        val senderChainKey: ChainKey
     )
 
 }

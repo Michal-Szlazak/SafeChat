@@ -8,8 +8,6 @@ import androidx.room.Relation
 data class EncryptionSessionEntity(
     @PrimaryKey(autoGenerate = false)
     val phoneNumber: String,
-    val symmetricKey: String,
-    val ad: String, //TODO to be removed, the root key does the same thing
 
     @Relation(
         parentColumn = "phoneNumber",
