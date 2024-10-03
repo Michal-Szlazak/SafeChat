@@ -6,8 +6,8 @@ import com.szlazakm.safechat.client.data.repositories.UserRepository
 import com.szlazakm.safechat.client.data.services.PreKeyService
 import com.szlazakm.safechat.utils.auth.AliceEncryptionSessionInitializer
 import com.szlazakm.safechat.utils.auth.BobDecryptionSessionInitializer
-import com.szlazakm.safechat.utils.auth.EncryptedMessageReceiver
-import com.szlazakm.safechat.utils.auth.EncryptedMessageSender
+import com.szlazakm.safechat.utils.auth.MessageDecryptor
+import com.szlazakm.safechat.utils.auth.MessageEncryptor
 import com.szlazakm.safechat.utils.auth.PreKeyManager
 import com.szlazakm.safechat.webclient.webservices.PreKeyWebService
 import com.szlazakm.safechat.webclient.webservices.UserWebService
@@ -48,16 +48,16 @@ class AuthModule {
     fun provideEncryptedMessageSender(
         aliceEncryptionSessionInitializer: AliceEncryptionSessionInitializer,
         encryptionSessionRepository: EncryptionSessionRepository
-    ): EncryptedMessageSender {
-        return EncryptedMessageSender(aliceEncryptionSessionInitializer, encryptionSessionRepository)
+    ): MessageEncryptor {
+        return MessageEncryptor(aliceEncryptionSessionInitializer, encryptionSessionRepository)
     }
 
     @Provides
     fun provideEncryptedMessageReceiver(
         encryptionSessionRepository: EncryptionSessionRepository,
         bobDecryptionSessionInitializer: BobDecryptionSessionInitializer
-    ): EncryptedMessageReceiver {
-        return EncryptedMessageReceiver(encryptionSessionRepository, bobDecryptionSessionInitializer)
+    ): MessageDecryptor {
+        return MessageDecryptor(encryptionSessionRepository, bobDecryptionSessionInitializer)
     }
 
     @Provides

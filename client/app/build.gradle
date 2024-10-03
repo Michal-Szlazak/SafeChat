@@ -117,9 +117,7 @@ dependencies {
 // https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk18on
     implementation 'org.bouncycastle:bcprov-jdk18on:1.78.1'
 
-
-
-
+    testImplementation 'org.spockframework:spock-core:2.4-M4-groovy-4.0'
 }
 
 kapt {

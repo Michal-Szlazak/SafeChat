@@ -10,7 +10,6 @@ import com.szlazakm.safechat.webclient.dtos.MessageDTO
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.invoke
 import java.security.SecureRandom
-import java.util.Base64
 import javax.crypto.Cipher
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
@@ -18,7 +17,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class EncryptedMessageSender @Inject constructor(
+class MessageEncryptor @Inject constructor(
     private val aliceEncryptionSessionInitializer: AliceEncryptionSessionInitializer,
     private val encryptionSessionRepository: EncryptionSessionRepository
 ) {
@@ -32,12 +31,12 @@ class EncryptedMessageSender @Inject constructor(
         val ad: ByteArray
 
         if(encryptionSession == null) {
-            Log.d("EncryptedMessageSender", "Encryption session is null")
+            Log.d("MessageEncryptor", "Encryption session is null")
             val initialMessageEncryptionBundle = aliceEncryptionSessionInitializer
                 .getInitialMessageEncryptionBundle(receiverPhoneNumber)
 
             if(initialMessageEncryptionBundle == null) {
-                Log.e("EncryptedMessageSender", "Failed to get initial message encryption bundle.")
+                Log.e("MessageEncryptor", "Failed to get initial message encryption bundle.")
                 return null
             }
 
@@ -56,12 +55,14 @@ class EncryptedMessageSender @Inject constructor(
                 Encoder.encode(initialMessageEncryptionBundle.aliceIdentityKey),
                 Encoder.encode(initialMessageEncryptionBundle.aliceEphemeralPublicKey),
                 initialMessageEncryptionBundle.bobOpkId,
-                initialMessageEncryptionBundle.bobSignedPreKeyId
+                initialMessageEncryptionBundle.bobSignedPreKeyId,
+                0, //TODO should probably get it from dto
+                0 //TODO should probably get it from dto
             )
 
         } else {
 
-            Log.d("EncryptedMessageSender", "Encryption session is not null $encryptionSession")
+            Log.d("MessageEncryptor", "Encryption session is not null $encryptionSession")
 
             symmetricKey = Decoder.decode(encryptionSession.symmetricKey)
             ad = Decoder.decode(encryptionSession.ad)
@@ -76,7 +77,9 @@ class EncryptedMessageSender @Inject constructor(
                 null,
                 null,
                 null,
-                null
+                null,
+                0,
+                0 //TODO should probably get it from dto
             )
         }
     }

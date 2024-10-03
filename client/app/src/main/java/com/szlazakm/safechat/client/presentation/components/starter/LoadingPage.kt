@@ -29,9 +29,6 @@ fun WelcomeScreen(
     var isLoading by remember { mutableStateOf(true) }
     var localUserPresent by remember { mutableStateOf(false) }
 
-    // Simulate checking if local user is present in the database
-
-
     LaunchedEffect(Unit) {
         Log.i("Welcome Screen", "Checking if user exists")
         localUserPresent = viewModel.isUserCreated()
@@ -46,7 +43,6 @@ fun WelcomeScreen(
         }
 
     }
-
 
     Scaffold(
         content = {paddingValues ->
