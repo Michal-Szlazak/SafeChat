@@ -41,7 +41,10 @@ class TestMessageProvider {
                         message.getAliceEphemeralPublicKey(),
                         message.getBobOpkId(),
                         message.getBobSpkId(),
-                        message.getTimestamp()
+                        message.getTimestamp(),
+                        message.getEphemeralRatchetKey(),
+                        message.getMessageIndex(),
+                        message.getLastMessageBatchSize()
                 )
         ).toList()
     }
@@ -57,6 +60,9 @@ class TestMessageProvider {
             .aliceEphemeralPublicKey("alice ephermal key")
             .bobSpkId(1)
             .bobOpkId(1)
+            .ephemeralRatchetKey("ratchet key".getBytes())
+            .messageIndex(0)
+            .lastMessageBatchSize(1)
             .build()
     }
 
@@ -71,6 +77,9 @@ class TestMessageProvider {
                 .bobSpkId(msg.getBobSpkId())
                 .bobOpkId(msg.getBobOpkId())
                 .timestamp(timestamp)
+                .ephemeralRatchetKey(msg.getEphemeralRatchetKey())
+                .messageIndex(msg.getMessageIndex())
+                .lastMessageBatchSize(msg.getLastMessageBatchSize())
                 .build()
     }
 
@@ -87,7 +96,10 @@ class TestMessageProvider {
                     msg.getAliceEphemeralPublicKey(),
                     msg.getBobOpkId(),
                     msg.getBobSpkId(),
-                    timestamp
+                    timestamp,
+                    msg.getEphemeralRatchetKey(),
+                    msg.getMessageIndex(),
+                    msg.getLastMessageBatchSize()
             );
         } else {
             return new OutputEncryptedMessageDTO(
@@ -96,7 +108,10 @@ class TestMessageProvider {
                     msg.getFrom(),
                     msg.getTo(),
                     msg.getCipher(),
-                    timestamp
+                    timestamp,
+                    msg.getEphemeralRatchetKey(),
+                    msg.getMessageIndex(),
+                    msg.getLastMessageBatchSize()
             );
         }
     }

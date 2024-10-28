@@ -1,7 +1,6 @@
 package com.szlazakm.chatserver.dtos.response;
 
 import com.szlazakm.chatserver.dtos.EncryptedMessageDTO;
-import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 
@@ -23,7 +22,11 @@ public class OutputEncryptedMessageDTO extends EncryptedMessageDTO {
             String aliceEphemeralPublicKey,
             Integer bobOpkId,
             Integer bobSpkId,
-            final String date) {
+            final String date,
+            String ephemeralRatchetKey,
+            int messageIndex,
+            int lastMessageBatchSize
+    ) {
         this.setInitial(initial);
         this.setId(id);
         this.setFrom(from);
@@ -34,6 +37,9 @@ public class OutputEncryptedMessageDTO extends EncryptedMessageDTO {
         this.setBobOpkId(bobOpkId);
         this.setBobSpkId(bobSpkId);
         this.date = date;
+        this.setEphemeralRatchetKey(ephemeralRatchetKey);
+        this.setMessageIndex(messageIndex);
+        this.setLastMessageBatchSize(lastMessageBatchSize);
     }
 
     public OutputEncryptedMessageDTO(
@@ -42,12 +48,19 @@ public class OutputEncryptedMessageDTO extends EncryptedMessageDTO {
             final String from,
             final String to,
             final String cipher,
-            final String date) {
+            final String date,
+            String ephemeralRatchetKey,
+            int messageIndex,
+            int lastMessageBatchSize
+    ) {
         this.setInitial(isInitial);
         this.setId(id);
         this.setFrom(from);
         this.setTo(to);
         this.setCipher(cipher);
         this.date = date;
+        this.setEphemeralRatchetKey(ephemeralRatchetKey);
+        this.setMessageIndex(messageIndex);
+        this.setLastMessageBatchSize(lastMessageBatchSize);
     }
 }

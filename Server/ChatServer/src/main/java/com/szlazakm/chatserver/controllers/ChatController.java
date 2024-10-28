@@ -44,6 +44,9 @@ public class ChatController {
                 .bobSpkId(msg.getBobSpkId())
                 .bobOpkId(msg.getBobOpkId())
                 .timestamp(timestamp)
+                .ephemeralRatchetKey(msg.getEphemeralRatchetKey())
+                .messageIndex(msg.getMessageIndex())
+                .lastMessageBatchSize(msg.getLastMessageBatchSize())
                 .build();
 
         UUID messageId = messageService.saveMessage(message);
@@ -62,7 +65,10 @@ public class ChatController {
                     msg.getAliceEphemeralPublicKey(),
                     msg.getBobOpkId(),
                     msg.getBobSpkId(),
-                    timestamp
+                    timestamp,
+                    msg.getEphemeralRatchetKey(),
+                    msg.getMessageIndex(),
+                    msg.getLastMessageBatchSize()
                     );
         } else {
             out = new OutputEncryptedMessageDTO(
@@ -71,7 +77,10 @@ public class ChatController {
                     msg.getFrom(),
                     msg.getTo(),
                     msg.getCipher(),
-                    timestamp
+                    timestamp,
+                    msg.getEphemeralRatchetKey(),
+                    msg.getMessageIndex(),
+                    msg.getLastMessageBatchSize()
             );
         }
 

@@ -29,4 +29,7 @@ public class Message {
     private Integer bobOpkId;
     private Integer bobSpkId;
     private String timestamp;
+    String ephemeralRatchetKey;
+    int messageIndex;
+    int lastMessageBatchSize;
 }

@@ -3,22 +3,22 @@ package com.szlazakm.safechat.utils.auth.ecc
 import com.szlazakm.safechat.utils.auth.utils.DiffieHellman
 import com.szlazakm.safechat.utils.auth.utils.KDF
 import java.security.InvalidKeyException
-import java.security.interfaces.ECPublicKey
 
 
 class RootKey(val key: ByteArray) {
 
     @Throws(InvalidKeyException::class)
     fun createChain(
-        theirRatchetKey: ECPublicKey,   //Signed pre-key
-        ourRatchetKey: EccKeyPair       //Our ephemeral key for random
+        theirRatchetPublicKey: ByteArray,
+        ourRatchetPrivateKey: ByteArray
     ): Pair<RootKey, ChainKey> {
         val sharedSecret: ByteArray =
-            DiffieHellman.createSharedSecret(ourRatchetKey.privateKey, theirRatchetKey.encoded)
+            DiffieHellman.createSharedSecret(ourRatchetPrivateKey, theirRatchetPublicKey)
+
         val derivedSecretBytes: ByteArray = KDF.deriveSecrets(
             sharedSecret,
             key,
-            "WhisperRatchet".toByteArray(),
+            "Ratchet".toByteArray(),
             64
         )
 
@@ -30,5 +30,4 @@ class RootKey(val key: ByteArray) {
 
         return Pair(newRootKey, newChainKey)
     }
-
 }

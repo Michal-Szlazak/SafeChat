@@ -65,7 +65,7 @@ class MessageSaverService : Service(){
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.d("MessageSaverService", "onStart called")
+        Log.d("SafeChat:MessageSaverService", "onStart called")
         serviceScope.launch{
             connectToUserQueue()
         }
@@ -76,24 +76,24 @@ class MessageSaverService : Service(){
     override fun onCreate() {
         instance = this
         super.onCreate()
-        Log.d("MessageSaverService", "onCreate called")
+        Log.d("SafeChat:MessageSaverService", "onCreate called")
     }
 
     override fun onDestroy() {
         instance = null
         super.onDestroy()
-        Log.d("MessageSaverService", "onDestroy called")
+        Log.d("SafeChat:MessageSaverService", "onDestroy called")
     }
 
     private suspend fun connectToUserQueue() {
 
-        var localUser: UserEntity
+        val localUser: UserEntity
 
         try {
             localUser = userRepository.getLocalUser()
         } catch (e: Exception) {
             Log.e(
-                "MessageSaverService",
+                "SafeChat:MessageSaverService",
                 "Exception while trying to get local user. Aborting MessageServiceCreation."
             )
             return
@@ -106,7 +106,7 @@ class MessageSaverService : Service(){
         stompService.connect()
         stompService.subscribeToTopic("/user/queue/${localUser.phoneNumber}") { message ->
 
-            Log.d("MessageSaverService","received a message $message")
+            Log.d("SafeChat:MessageSaverService","received a message $message")
 
             serviceScope.launch {
                 val outputEncryptedMessageDTO = gson.fromJson(message, OutputEncryptedMessageDTO::class.java)
@@ -124,13 +124,13 @@ class MessageSaverService : Service(){
 
                 if(decryptedMessage == null) {
                     Log.e(
-                        "MessageSaverService",
+                        "SafeChat:MessageSaverService",
                         "Failed to decrypt message from: ${it.from}"
                     )
                     return@withContext
                 } else{
                     Log.d(
-                        "MessageSaverService",
+                        "SafeChat:MessageSaverService",
                         "Successfully decrypted message from: ${it.from}" +
                                 " message: $decryptedMessage")
                 }
@@ -141,25 +141,31 @@ class MessageSaverService : Service(){
     }
 
     private suspend fun handleNewMessage(outputEncryptedMessageDTO: OutputEncryptedMessageDTO) {
-        val decryptedMessage = decryptMessage(outputEncryptedMessageDTO)
+        try {
+            val decryptedMessage = decryptMessage(outputEncryptedMessageDTO)
 
-        if(decryptedMessage == null) {
-            Log.e(
-                "MessageSaverService",
-                "Failed to decrypt message from: ${outputEncryptedMessageDTO.from}"
-            )
-            return
-        } else{
-            Log.d(
-                "MessageSaverService",
-                "Successfully decrypted message from: ${outputEncryptedMessageDTO.from}" +
-                        " message: $decryptedMessage")
+            if(decryptedMessage == null) {
+                Log.e(
+                    "SafeChat:MessageSaverService",
+                    "Failed to decrypt message from: ${outputEncryptedMessageDTO.from}"
+                )
+
+                return
+            } else{
+                Log.d(
+                    "SafeChat:MessageSaverService",
+                    "Successfully decrypted message from: ${outputEncryptedMessageDTO.from}" +
+                            " message: $decryptedMessage")
+            }
+
+            messageListener?.onNewMessage(decryptedMessage)
+
+            saveNewMessage(decryptedMessage)
+        } catch (e: Exception) {
+            Log.e("SafeChat:MessageSaverService", "Exception thrown while handling new message")
+        } finally {
+            acknowledgeMessage(MessageAcknowledgementDTO(outputEncryptedMessageDTO.id))
         }
-
-        messageListener?.onNewMessage(decryptedMessage)
-
-        saveNewMessage(decryptedMessage)
-        acknowledgeMessage(MessageAcknowledgementDTO(outputEncryptedMessageDTO.id))
     }
 
     private suspend fun createNewContact(decryptedMessage: MessageEntity) {
@@ -169,7 +175,7 @@ class MessageSaverService : Service(){
 
         if(userDTO == null) {
             Log.e(
-                "MessageSaverService",
+                "SafeChat:MessageSaverService",
                 "Contact for phone: ${decryptedMessage.senderPhoneNumber} not found."
             )
             return
@@ -186,7 +192,7 @@ class MessageSaverService : Service(){
         contactListener?.onNewContact(newContact)
 
         Log.d(
-            "MessageSaverService",
+            "SafeChat:MessageSaverService",
             "New contact created: $newContact"
         )
     }
@@ -197,13 +203,13 @@ class MessageSaverService : Service(){
 
         if(decryptedMessage == null) {
             Log.e(
-                "MessageSaverService",
+                "SafeChat:MessageSaverService",
                 "Failed to decrypt message from: ${outputEncryptedMessageDTO.from}"
             )
             return null
         } else{
             Log.d(
-                "MessageSaverService",
+                "SafeChat:MessageSaverService",
                 "Successfully decrypted message from: ${outputEncryptedMessageDTO.from}" +
                         " message: $decryptedMessage")
         }
@@ -228,7 +234,7 @@ class MessageSaverService : Service(){
         }
 
         Log.d(
-            "MessageSaverService",
+            "SafeChat:MessageSaverService",
             "Received new message from: ${decryptedMessage.senderPhoneNumber}" +
                     " message: ${decryptedMessage.content}")
 
@@ -262,12 +268,12 @@ class MessageSaverService : Service(){
             try {
                 val response : Response<Void> = chatWebService.acknowledge(messageAcknowledgementDTO).execute()
                 if(response.isSuccessful) {
-                    Log.d("MessageSaverService", "Successfully to send message receive acknowledgement.")
+                    Log.d("SafeChat:MessageSaverService", "Successfully send message receive acknowledgement.")
                 } else {
-                    Log.e("MessageSaverService", "Failed to send message receive acknowledgement.")
+                    Log.e("SafeChat:MessageSaverService", "Failed to send message receive acknowledgement.")
                 }
             } catch (e: Exception) {
-                Log.e("MessageSaverService",
+                Log.e("SafeChat:MessageSaverService",
                     "Exception while trying to send message receive acknowledgement.")
             }
         }
@@ -281,14 +287,14 @@ class MessageSaverService : Service(){
                 val response : Response<List<OutputEncryptedMessageDTO>> =
                     chatWebService.getNewMessages(localUserPhoneNumber).execute()
                 if(response.isSuccessful) {
-                    Log.d("MessageSaverService", "Successfully fetched new messages.")
+                    Log.d("SafeChat:MessageSaverService", "Successfully fetched new messages. Response: ${response.body()}")
                     response.body()
                 } else {
-                    Log.e("MessageSaverService", "Failed to fetch new messages.")
+                    Log.e("SafeChat:MessageSaverService", "Failed to fetch new messages.")
                     null
                 }
             } catch (e: Exception) {
-                Log.e("MessageSaverService",
+                Log.e("SafeChat:MessageSaverService",
                     "Exception while trying to fetch new messages. ${e.message}")
                 null
             }

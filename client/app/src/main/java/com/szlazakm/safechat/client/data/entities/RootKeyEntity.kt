@@ -4,8 +4,8 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 @Entity(tableName = "root_key")
-class RootKeyEntity (
+data class RootKeyEntity (
     @PrimaryKey(autoGenerate = false)
     val phoneNumber: String,
-    val rootKey: String
+    val rootKey: ByteArray
 )

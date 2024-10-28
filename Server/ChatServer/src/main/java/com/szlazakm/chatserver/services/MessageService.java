@@ -46,7 +46,10 @@ public class MessageService {
                         message.getAliceEphemeralPublicKey(),
                         message.getBobOpkId(),
                         message.getBobSpkId(),
-                        message.getTimestamp()
+                        message.getTimestamp(),
+                        message.getEphemeralRatchetKey(),
+                        message.getMessageIndex(),
+                        message.getLastMessageBatchSize()
                 )
         ).toList();
     }

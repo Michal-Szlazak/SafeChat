@@ -1,127 +1,210 @@
 package com.szlazakm.safechat.utils.auth
 
+import android.content.res.Resources
 import android.util.Log
-import com.szlazakm.safechat.client.data.entities.EncryptionSessionEntity
-import com.szlazakm.safechat.client.data.repositories.EncryptionSessionRepository
+import com.szlazakm.safechat.client.data.entities.EncryptionSession
+import com.szlazakm.safechat.client.data.entities.EphemeralRatchetEccKeyPairEntity
+import com.szlazakm.safechat.client.data.entities.IdentityKeyEntity
+import com.szlazakm.safechat.client.data.entities.RootKeyEntity
+import com.szlazakm.safechat.client.data.entities.SenderChainKeyEntity
+import com.szlazakm.safechat.client.data.repositories.EphemeralRatchetKeyPairRepository
+import com.szlazakm.safechat.client.data.repositories.IdentityKeyRepository
+import com.szlazakm.safechat.client.data.repositories.RootKeyRepository
+import com.szlazakm.safechat.client.data.repositories.SenderChainKeyRepository
+import com.szlazakm.safechat.client.data.repositories.UserRepository
+import com.szlazakm.safechat.utils.auth.alice.AliceEncryptionSessionInitializer
+import com.szlazakm.safechat.utils.auth.alice.InitialMessageEncryptionBundle
+import com.szlazakm.safechat.utils.auth.ecc.ChainKey
 import com.szlazakm.safechat.utils.auth.utils.Decoder
 import com.szlazakm.safechat.utils.auth.utils.Encoder
+import com.szlazakm.safechat.utils.auth.utils.MAC
+import com.szlazakm.safechat.utils.auth.utils.PaddingHandler
 import com.szlazakm.safechat.webclient.dtos.EncryptedMessageDTO
 import com.szlazakm.safechat.webclient.dtos.MessageDTO
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.invoke
-import java.security.SecureRandom
+import kotlinx.coroutines.withContext
+import java.nio.charset.StandardCharsets
 import javax.crypto.Cipher
-import javax.crypto.spec.GCMParameterSpec
-import javax.crypto.spec.SecretKeySpec
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class MessageEncryptor @Inject constructor(
+    private val userRepository: UserRepository,
     private val aliceEncryptionSessionInitializer: AliceEncryptionSessionInitializer,
-    private val encryptionSessionRepository: EncryptionSessionRepository
+    private val rootKeyRepository: RootKeyRepository,
+    private val senderChainKeyRepository: SenderChainKeyRepository,
+    private val ephemeralRatchetKeyPairRepository: EphemeralRatchetKeyPairRepository,
+    private val identityKeyRepository: IdentityKeyRepository
 ) {
 
     suspend fun encryptMessage(messageDTO: MessageDTO) : EncryptedMessageDTO? {
 
         val receiverPhoneNumber = messageDTO.to
-        val encryptionSession = encryptionSessionRepository.getEncryptionSessionByPhoneNumber(receiverPhoneNumber)
+        val encryptionSession = rootKeyRepository.getEncryptionSession(receiverPhoneNumber)
 
-        val symmetricKey: ByteArray
-        val ad: ByteArray
+        val localUser = userRepository.getLocalUser()
 
         if(encryptionSession == null) {
             Log.d("MessageEncryptor", "Encryption session is null")
+
             val initialMessageEncryptionBundle = aliceEncryptionSessionInitializer
                 .getInitialMessageEncryptionBundle(receiverPhoneNumber)
 
-            if(initialMessageEncryptionBundle == null) {
-                Log.e("MessageEncryptor", "Failed to get initial message encryption bundle.")
-                return null
-            }
+            val session = createNewSession(receiverPhoneNumber, initialMessageEncryptionBundle)
 
-            symmetricKey = initialMessageEncryptionBundle.symmetricKey
-            ad = initialMessageEncryptionBundle.ad
+            var chainKey = initialMessageEncryptionBundle.ratchetSendingChain.second
 
-            createNewSession(receiverPhoneNumber, symmetricKey, ad)
+            Log.d("SafeChat:MessageEncryptor", "Sending chain key: ${chainKey.key.toHex()}")
 
-            val cipherText = encryptMessage(symmetricKey, ad, messageDTO.text)
+            val cipherText = encryptMessage(
+                chainKey,
+                messageDTO.text
+            )
 
-            return EncryptedMessageDTO(
+            val mac = MAC.createMac(
+                chainKey.getMessageKeys(),
+                receiverPublicKey = session.identityKeyEntity.publicKey,
+                senderPublicKey = Decoder.decode(localUser.publicIdentityKey),
+                encryptedMessage = cipherText
+            )
+
+            val encryptedMessageDTO = EncryptedMessageDTO(
                 initial = true,
                 messageDTO.from,
                 messageDTO.to,
-                Encoder.encode(cipherText),
-                Encoder.encode(initialMessageEncryptionBundle.aliceIdentityKey),
+                Encoder.encode(cipherText + mac ),
+                Encoder.encode(initialMessageEncryptionBundle.alicePublicIdentityKey),
                 Encoder.encode(initialMessageEncryptionBundle.aliceEphemeralPublicKey),
                 initialMessageEncryptionBundle.bobOpkId,
                 initialMessageEncryptionBundle.bobSignedPreKeyId,
-                0, //TODO should probably get it from dto
-                0 //TODO should probably get it from dto
+                Encoder.encode(initialMessageEncryptionBundle.aliceEphemeralRatchetEccKeyPair.publicKey),
+                chainKey.index,
+                session.senderChainKeyEntity.lastMessageBatchSize
             )
+
+            chainKey = chainKey.getNextChainKey()
+
+            val updatedChainKeyEntity = SenderChainKeyEntity(
+                phoneNumber = receiverPhoneNumber,
+                chainKey = chainKey.key,
+                chainKeyIndex = 1,
+                lastMessageBatchSize = 0,
+                id = 0 //overwritten by db
+            )
+            senderChainKeyRepository.updateChainKey(updatedChainKeyEntity)
+
+            return encryptedMessageDTO
 
         } else {
 
-            Log.d("MessageEncryptor", "Encryption session is not null $encryptionSession")
+            Log.d("SafeChat:MessageEncryptor", "Encryption session is not null $encryptionSession")
 
-            symmetricKey = Decoder.decode(encryptionSession.symmetricKey)
-            ad = Decoder.decode(encryptionSession.ad)
-
-            val cipherText = encryptMessage(symmetricKey, ad, messageDTO.text)
-
-            return EncryptedMessageDTO(
-                initial = false,
-                messageDTO.from,
-                messageDTO.to,
-                Encoder.encode(cipherText),
-                null,
-                null,
-                null,
-                null,
-                0,
-                0 //TODO should probably get it from dto
+            val chainKeyEntity = encryptionSession.senderChainKeyEntity
+            var chainKey = ChainKey(
+                chainKeyEntity.chainKey,
+                chainKeyEntity.chainKeyIndex
             )
+
+            Log.d("SafeChat:MessageEncryptor", "sender chain key: ${chainKey.key.toHex()}")
+
+            val cipherText = encryptMessage(
+                chainKey,
+                messageDTO.text
+            )
+
+            val mac = MAC.createMac(
+                messageKeys = chainKey.getMessageKeys(),
+                receiverPublicKey = encryptionSession.identityKeyEntity.publicKey,
+                senderPublicKey = Decoder.decode(localUser.publicIdentityKey),
+                encryptedMessage = cipherText
+            )
+
+            val encryptedMessageDTO = EncryptedMessageDTO(
+                initial = false,
+                from = messageDTO.from,
+                to = messageDTO.to,
+                cipher = Encoder.encode(cipherText + mac),
+                aliceIdentityPublicKey = null,
+                aliceEphemeralPublicKey = null,
+                bobOpkId = null,
+                bobSpkId = null,
+                ephemeralRatchetKey = Encoder.encode(encryptionSession.ephemeralRatchetEccKeyPairEntity.publicKey),
+                messageIndex = chainKey.index,
+                lastMessageBatchSize = chainKeyEntity.lastMessageBatchSize
+            )
+
+            chainKey = chainKey.getNextChainKey()
+
+            val updatedChainKeyEntity = SenderChainKeyEntity(
+                phoneNumber = chainKeyEntity.phoneNumber,
+                chainKey = chainKey.key,
+                chainKeyIndex = chainKeyEntity.chainKeyIndex + 1,
+                lastMessageBatchSize = chainKeyEntity.lastMessageBatchSize,
+                id = chainKeyEntity.id
+            )
+            senderChainKeyRepository.updateChainKey(updatedChainKeyEntity)
+
+            return encryptedMessageDTO
         }
     }
 
     private suspend fun createNewSession(
         phoneNumber: String,
-        symmetricKey: ByteArray,
-        ad: ByteArray
-    ) {
-        val encryptionSessionEntity = EncryptionSessionEntity(
+        initialMessageEncryptionBundle: InitialMessageEncryptionBundle
+    ): EncryptionSession {
+
+        val rootKeyEntity = RootKeyEntity(
             phoneNumber,
-            Encoder.encode(symmetricKey),
-            Encoder.encode(ad)
+            initialMessageEncryptionBundle.ratchetSendingChain.first.key
         )
-        (Dispatchers.IO) {
-            encryptionSessionRepository.createNewEncryptionSession(encryptionSessionEntity)
+
+        val senderChainKeyEntity = SenderChainKeyEntity(
+            phoneNumber = phoneNumber,
+            chainKey = initialMessageEncryptionBundle.ratchetSendingChain.second.key,
+            chainKeyIndex = 0,
+            lastMessageBatchSize = 0,
+            id = 0 //overwritten by db
+        )
+
+        val ephemeralRatchetEccKeyPairEntity = EphemeralRatchetEccKeyPairEntity(
+            phoneNumber = phoneNumber,
+            publicKey = initialMessageEncryptionBundle.aliceEphemeralRatchetEccKeyPair.publicKey,
+            privateKey = initialMessageEncryptionBundle.aliceEphemeralRatchetEccKeyPair.privateKey
+        )
+
+        val identityKeyEntity = IdentityKeyEntity(
+            phoneNumber = phoneNumber,
+            publicKey = initialMessageEncryptionBundle.bobPublicIdentityKey
+        )
+
+        return withContext(Dispatchers.IO) {
+            rootKeyRepository.createRootKey(rootKeyEntity)
+            senderChainKeyRepository.createChainKey(senderChainKeyEntity)
+            ephemeralRatchetKeyPairRepository.createEphemeralRatchetKeyPair(ephemeralRatchetEccKeyPairEntity)
+            identityKeyRepository.createIdentityKey(identityKeyEntity)
+
+            rootKeyRepository.getEncryptionSession(phoneNumber)
+                ?: throw Resources.NotFoundException("Failed to retrieve new session after creation.")
         }
     }
 
     private fun encryptMessage(
-        symmetricKey: ByteArray,
-        ad: ByteArray,
+        chainKey: ChainKey,
         message: String
     ) : ByteArray {
-        val iv = ByteArray(12) // 12 bytes IV for AES-GCM
-        SecureRandom().nextBytes(iv)
 
-        // Create AES-GCM cipher instance
-        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-        val keySpec = SecretKeySpec(symmetricKey, "AES")
-        val gcmParams = GCMParameterSpec(128, iv)
-        cipher.init(Cipher.ENCRYPT_MODE, keySpec, gcmParams)
+        val messageKeys = chainKey.getMessageKeys()
 
-        // Encrypt the plaintext with AES-GCM
-        val ciphertext = cipher.doFinal(message.encodeToByteArray())
+        val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+        cipher.init(Cipher.ENCRYPT_MODE, messageKeys.getCipherKey(), messageKeys.getIv())
 
-        // Concatenate header and ciphertext
-        val encryptedMessage = ByteArray(ad.size + iv.size + ciphertext.size)
-        System.arraycopy(ad, 0, encryptedMessage, 0, ad.size)
-        System.arraycopy(iv, 0, encryptedMessage, ad.size, iv.size)
-        System.arraycopy(ciphertext, 0, encryptedMessage, ad.size + iv.size, ciphertext.size)
+        val messageBytes = message.toByteArray(StandardCharsets.UTF_8)
 
-        return encryptedMessage
+        val paddedMessageBytes = PaddingHandler.addPadding(messageBytes)
+
+        return cipher.doFinal(paddedMessageBytes)
     }
+
+    fun ByteArray.toHex(): String = joinToString(separator = "") { eachByte -> "%02x".format(eachByte) }
 }

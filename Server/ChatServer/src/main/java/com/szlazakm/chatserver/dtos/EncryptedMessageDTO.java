@@ -21,4 +21,7 @@ public class EncryptedMessageDTO {
     String aliceEphemeralPublicKey;
     Integer bobOpkId;
     Integer bobSpkId;
+    String ephemeralRatchetKey;
+    int messageIndex;
+    int lastMessageBatchSize;
 }

@@ -1,13 +1,11 @@
 package com.szlazakm.safechat.utils.auth.utils
 
-import at.favre.lib.hkdf.HKDF
 import com.szlazakm.safechat.utils.auth.ecc.ChainKey
 import com.szlazakm.safechat.utils.auth.ecc.RootKey
 import org.bouncycastle.crypto.Digest
 import org.bouncycastle.crypto.digests.SHA256Digest
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator
 import org.bouncycastle.crypto.params.HKDFParameters
-import java.security.SecureRandom
 
 
 class KDF {

@@ -8,12 +8,12 @@ import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
 
-class ChainKey(val key: ByteArray, val index: Int) {
+open class ChainKey(val key: ByteArray, val index: Int) {
 
-    val MESSAGE_KEY_SEED: ByteArray = byteArrayOf(0x01)
-    val CHAIN_KEY_SEED: ByteArray = byteArrayOf(0x02)
+    private val MESSAGE_KEY_SEED: ByteArray = byteArrayOf(0x01)
+    protected val CHAIN_KEY_SEED: ByteArray = byteArrayOf(0x02)
 
-    fun getNextChainKey(): ChainKey {
+    open fun getNextChainKey(): ChainKey {
         val nextKey = getBaseMaterial(CHAIN_KEY_SEED)
         return ChainKey(nextKey, index + 1)
     }
@@ -22,7 +22,7 @@ class ChainKey(val key: ByteArray, val index: Int) {
         val inputKeyMaterial = getBaseMaterial(MESSAGE_KEY_SEED)
         val keyMaterialBytes: ByteArray = KDF.deriveSecrets(
             inputKeyMaterial,
-            "MessageKeys".toByteArray(),
+            "SafeChatMessageKeys".toByteArray(),
             80
         )
 
@@ -42,7 +42,7 @@ class ChainKey(val key: ByteArray, val index: Int) {
         )
     }
 
-    private fun getBaseMaterial(seed: ByteArray): ByteArray {
+    protected fun getBaseMaterial(seed: ByteArray): ByteArray {
         try {
             val mac: Mac = Mac.getInstance("HmacSHA256")
             mac.init(SecretKeySpec(key, "HmacSHA256"))

@@ -23,5 +23,11 @@ data class OutputEncryptedMessageDTO(
     @JsonProperty("bobSpkId")
     val bobSpkId: Int?,
     @JsonProperty("date")
-    val date: String
+    val date: String,
+    @JsonProperty("ephemeralRatchetKey")
+    val ephemeralRatchetKey: String,
+    @JsonProperty("messageIndex")
+    val messageIndex: Int,
+    @JsonProperty("lastMessageBatchSize")
+    val lastMessageBatchSize: Int
 )

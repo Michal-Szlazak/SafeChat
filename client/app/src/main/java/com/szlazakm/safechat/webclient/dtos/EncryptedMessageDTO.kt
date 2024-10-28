@@ -9,6 +9,7 @@ data class EncryptedMessageDTO (
     val aliceEphemeralPublicKey: String?,
     val bobOpkId: Int?,
     val bobSpkId: Int?,
+    val ephemeralRatchetKey: String,
     val messageIndex: Int,
     val lastMessageBatchSize: Int
 )
