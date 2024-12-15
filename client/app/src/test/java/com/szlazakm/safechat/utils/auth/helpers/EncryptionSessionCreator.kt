@@ -152,7 +152,8 @@ class EncryptionSessionCreator {
                 chainKey = chainKey.key,
                 chainKeyIndex = chainKey.index,
                 phoneNumber = phoneNumber,
-                lastMessageBatchSize = 0
+                lastMessageBatchSize = 0,
+                id = 0
             )
         }
 
@@ -210,7 +211,8 @@ class EncryptionSessionCreator {
                 phoneNumber = phoneNumber,
                 chainKey = initialMessageEncryptionBundle.ratchetSendingChain.second.key,
                 chainKeyIndex = 0,
-                lastMessageBatchSize = 0
+                lastMessageBatchSize = 0,
+                id = 0
             )
 
             val ephemeralRatchetEccKeyPairEntity = EphemeralRatchetEccKeyPairEntity(
@@ -246,7 +248,8 @@ class EncryptionSessionCreator {
                 phoneNumber = phoneNumber,
                 chainKey = initialMessageDecryptionBundle.ratchetKeyPair.second.key,
                 chainKeyIndex = 0,
-                lastMessageBatchSize = 0
+                lastMessageBatchSize = 0,
+                id = 0
             )
 
             val receiverChainKeyEntity = ReceiverChainKeyEntity(

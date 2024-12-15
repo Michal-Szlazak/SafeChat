@@ -1,17 +1,17 @@
 package com.szlazakm.chatserver.dtos;
 
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import lombok.extern.jackson.Jacksonized;
 
+import java.time.Instant;
 import java.util.UUID;
 
-@Builder
+@SuperBuilder
 @Jacksonized
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 @ToString
-public class EncryptedMessageDTO {
+public class EncryptedMessageDTO extends AuthMessage {
     boolean initial;
     UUID id;
     String from;

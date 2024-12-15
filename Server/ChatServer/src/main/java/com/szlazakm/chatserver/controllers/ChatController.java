@@ -5,7 +5,10 @@ import com.szlazakm.chatserver.dtos.EncryptedMessageDTO;
 import com.szlazakm.chatserver.dtos.response.MessageSentResponseDto;
 import com.szlazakm.chatserver.dtos.response.OutputEncryptedMessageDTO;
 import com.szlazakm.chatserver.entities.Message;
+import com.szlazakm.chatserver.exceptionHandling.exceptions.ExpiredNonceException;
+import com.szlazakm.chatserver.exceptionHandling.exceptions.ReusedNonceException;
 import com.szlazakm.chatserver.services.MessageService;
+import com.szlazakm.chatserver.services.NonceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -25,10 +28,13 @@ public class ChatController {
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final MessageService messageService;
     private final Instant instant;
+    private final NonceService nonceService;
 
     @PostMapping("/room")
     @ResponseStatus(HttpStatus.CREATED)
     public MessageSentResponseDto sendMessage(@RequestBody EncryptedMessageDTO msg){
+
+        nonceService.handleAuthMessage(msg);
 
         String timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(
                 new Date(instant.getEpochSecond() * 1000)
@@ -55,33 +61,33 @@ public class ChatController {
 
         Log.d("ChatController", "Encrypted message: " + msg);
         if(msg.isInitial()) {
-            out = new OutputEncryptedMessageDTO(
-                    messageId,
-                    true,
-                    msg.getFrom(),
-                    msg.getTo(),
-                    msg.getCipher(),
-                    msg.getAliceIdentityPublicKey(),
-                    msg.getAliceEphemeralPublicKey(),
-                    msg.getBobOpkId(),
-                    msg.getBobSpkId(),
-                    timestamp,
-                    msg.getEphemeralRatchetKey(),
-                    msg.getMessageIndex(),
-                    msg.getLastMessageBatchSize()
-                    );
+            out = OutputEncryptedMessageDTO.builder()
+                    .id(messageId)
+                    .initial(false)
+                    .from(msg.getFrom())
+                    .to(msg.getTo())
+                    .cipher(msg.getCipher())
+                    .aliceIdentityPublicKey(msg.getAliceIdentityPublicKey())
+                    .aliceEphemeralPublicKey(msg.getAliceEphemeralPublicKey())
+                    .bobOpkId(msg.getBobOpkId())
+                    .bobSpkId(msg.getBobSpkId())
+                    .date(timestamp)
+                    .ephemeralRatchetKey(msg.getEphemeralRatchetKey())
+                    .messageIndex(msg.getMessageIndex())
+                    .lastMessageBatchSize(msg.getLastMessageBatchSize())
+                    .build();
         } else {
-            out = new OutputEncryptedMessageDTO(
-                    messageId,
-                    false,
-                    msg.getFrom(),
-                    msg.getTo(),
-                    msg.getCipher(),
-                    timestamp,
-                    msg.getEphemeralRatchetKey(),
-                    msg.getMessageIndex(),
-                    msg.getLastMessageBatchSize()
-            );
+            out = OutputEncryptedMessageDTO.builder()
+                    .id(messageId)
+                    .initial(false)
+                    .from(msg.getFrom())
+                    .to(msg.getTo())
+                    .cipher(msg.getCipher())
+                    .date(timestamp)
+                    .ephemeralRatchetKey(msg.getEphemeralRatchetKey())
+                    .messageIndex(msg.getMessageIndex())
+                    .lastMessageBatchSize(msg.getLastMessageBatchSize())
+                    .build();
         }
 
         simpMessagingTemplate.convertAndSend(
