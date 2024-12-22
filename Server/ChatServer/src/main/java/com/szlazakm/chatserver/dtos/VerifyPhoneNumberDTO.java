@@ -15,4 +15,6 @@ public class VerifyPhoneNumberDTO {
     @NotNull
     @Pattern(regexp = "^\\d{4}$", message = "The code has to contain 4 digits")
     String code;
+
+    String phoneNumber;
 }

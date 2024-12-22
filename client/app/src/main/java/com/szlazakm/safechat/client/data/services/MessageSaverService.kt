@@ -12,6 +12,10 @@ import com.szlazakm.safechat.client.data.repositories.MessageRepository
 import com.szlazakm.safechat.client.data.repositories.UserRepository
 import com.szlazakm.safechat.client.domain.Contact
 import com.szlazakm.safechat.utils.auth.MessageDecryptor
+import com.szlazakm.safechat.utils.auth.ecc.AuthMessageHelper
+import com.szlazakm.safechat.utils.auth.utils.Decoder
+import com.szlazakm.safechat.utils.auth.utils.Encoder
+import com.szlazakm.safechat.webclient.dtos.GetMessagesDTO
 import com.szlazakm.safechat.webclient.dtos.MessageAcknowledgementDTO
 import com.szlazakm.safechat.webclient.dtos.OutputEncryptedMessageDTO
 import com.szlazakm.safechat.webclient.dtos.UserDTO
@@ -25,6 +29,7 @@ import kotlinx.coroutines.withContext
 import retrofit2.Response
 import retrofit2.Retrofit
 import java.text.SimpleDateFormat
+import java.time.Instant
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -162,9 +167,25 @@ class MessageSaverService : Service(){
 
             saveNewMessage(decryptedMessage)
         } catch (e: Exception) {
-            Log.e("SafeChat:MessageSaverService", "Exception thrown while handling new message")
+            Log.e("SafeChat:MessageSaverService", "Exception thrown while handling new message: ${e.message}")
         } finally {
-            acknowledgeMessage(MessageAcknowledgementDTO(outputEncryptedMessageDTO.id))
+
+            val nonce =  AuthMessageHelper.generateNonce()
+            val instant = Instant.now().epochSecond.toString()
+            val privateKeyBytes = Decoder.decode(userRepository.getLocalUser().privateIdentityKey)
+            val dataToSign = nonce.plus(Decoder.decode(instant))
+            val signature = AuthMessageHelper.generateSignature(
+                privateKeyBytes,
+                dataToSign
+            )
+
+            acknowledgeMessage(MessageAcknowledgementDTO(
+                outputEncryptedMessageDTO.id,
+                nonceTimestamp = instant.toLong(),
+                phoneNumber = userRepository.getLocalUser().phoneNumber,
+                nonce = nonce,
+                authMessageSignature = signature
+            ))
         }
     }
 
@@ -214,8 +235,10 @@ class MessageSaverService : Service(){
                         " message: $decryptedMessage")
         }
 
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS")
         val timestamp = dateFormat.parse(outputEncryptedMessageDTO.date)
+
+        Log.d("SafeChat:MessageSaverService", "Timestamp: $timestamp for message: $decryptedMessage")
 
         return MessageEntity(
             senderPhoneNumber = outputEncryptedMessageDTO.from,
@@ -284,8 +307,24 @@ class MessageSaverService : Service(){
             val chatWebService = retrofit.create(ChatWebService::class.java)
 
             try {
+
+                val nonce =  AuthMessageHelper.generateNonce()
+                val instant = Instant.now().epochSecond.toString()
+                val privateKeyBytes = Decoder.decode(userRepository.getLocalUser().privateIdentityKey)
+                val dataToSign = nonce.plus(Decoder.decode(instant))
+                val signature = AuthMessageHelper.generateSignature(
+                    privateKeyBytes,
+                    dataToSign
+                )
+                val getMessagesDTO = GetMessagesDTO(
+                    phoneNumber = localUserPhoneNumber,
+                    nonce = nonce,
+                    nonceTimestamp = instant.toLong(),
+                    authMessageSignature = signature
+                )
+
                 val response : Response<List<OutputEncryptedMessageDTO>> =
-                    chatWebService.getNewMessages(localUserPhoneNumber).execute()
+                    chatWebService.getNewMessages(getMessagesDTO).execute()
                 if(response.isSuccessful) {
                     Log.d("SafeChat:MessageSaverService", "Successfully fetched new messages. Response: ${response.body()}")
                     response.body()

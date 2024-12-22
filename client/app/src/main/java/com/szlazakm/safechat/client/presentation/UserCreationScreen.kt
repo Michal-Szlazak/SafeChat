@@ -102,6 +102,11 @@ fun NavGraphBuilder.userCreationGraph(
             VerifyPinScreen(
                 onVerify = { verifyPin ->
                     if(verifyPin == state.pin) {
+                        vm.saveUser(
+                            navController = navController,
+                            successDestination = UserCreationScreenRoutes.VerifyPhoneNumber,
+                            failureDestination = UserCreationScreenRoutes.SignIn
+                        )
                         navController.navigate(UserCreationScreenRoutes.VerifyPhoneNumber.route)
                     } else {
                         navController.navigate(UserCreationScreenRoutes.SignInPin.route)
@@ -121,16 +126,9 @@ fun NavGraphBuilder.userCreationGraph(
              VerifyPhoneNumberScreen(
                  viewModel = vm,
                  onVerifyClick = {
-                     //TODO(verify the code)
                      if(it) {
-                         vm.saveUser(
-                             navController = navController,
-                             successDestination = MainScreenRoutes.ContactList,
-                             failureDestination = UserCreationScreenRoutes.SignIn
-                         )
-                     } else {
-                         navController.navigate(UserCreationScreenRoutes.SignIn.route) {
-                                popUpTo(UserCreationScreenRoutes.SignIn.route)
+                         vm.saveUserKeys()
+                         navController.navigate(MainScreenRoutes.ContactList.route) {
                                 launchSingleTop = true
                          }
                      }

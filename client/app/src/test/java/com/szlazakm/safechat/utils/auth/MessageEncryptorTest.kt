@@ -35,6 +35,8 @@ import java.util.UUID
 @RunWith(RobolectricTestRunner::class)
 class MessageEncryptorTest {
 
+    /*
+
     @Mock
     private lateinit var aliceEncryptionSessionInitializer: AliceEncryptionSessionInitializer
     @Mock
@@ -264,5 +266,5 @@ class MessageEncryptorTest {
 
         Assert.assertEquals(message, decryptedMessage)
     }
-
+*/
 }

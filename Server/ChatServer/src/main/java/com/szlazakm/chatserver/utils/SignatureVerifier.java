@@ -39,6 +39,19 @@ public class SignatureVerifier {
         return this.signature.verify(signatureBytes);
     }
 
+    public boolean verifySignature(String signingKey, byte[] signedKey, byte[] signature)
+            throws InvalidKeySpecException, InvalidKeyException, SignatureException {
+
+        byte[] signingKeyBytes = decode(signingKey);
+
+        KeySpec keySpec = new X509EncodedKeySpec(signingKeyBytes);
+        PublicKey publicKey = keyFactory.generatePublic(keySpec);
+
+        this.signature.initVerify(publicKey);
+        this.signature.update(signedKey);
+        return this.signature.verify(signature);
+    }
+
     private byte[] decode(String encodedString) {
         return Base64.getDecoder().decode(encodedString);
     }

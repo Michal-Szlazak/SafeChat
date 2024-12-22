@@ -89,6 +89,11 @@ public class UserService {
 
     public boolean verifyPhoneNumber(VerifyPhoneNumberDTO verifyPhoneNumberDTO) {
 
+        Optional<User> optUser = userRepository.findByPhoneNumber(verifyPhoneNumberDTO.getPhoneNumber());
+        User user = optUser.orElseThrow(UserNotFoundException::new);
+        user.setVerified(true);
+        userRepository.save(user);
+
         try {
             TimeUnit.SECONDS.sleep(1);
         } catch (InterruptedException e) {

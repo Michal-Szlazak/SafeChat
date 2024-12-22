@@ -17,6 +17,9 @@ import com.szlazakm.safechat.webclient.dtos.MessageDTO
 import com.szlazakm.safechat.webclient.dtos.MessageSentResponseDTO
 import com.szlazakm.safechat.webclient.webservices.ChatWebService
 import com.szlazakm.safechat.utils.auth.MessageEncryptor
+import com.szlazakm.safechat.utils.auth.ecc.AuthMessageHelper
+import com.szlazakm.safechat.utils.auth.utils.Decoder
+import com.szlazakm.safechat.utils.auth.utils.Encoder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,6 +29,7 @@ import kotlinx.coroutines.withContext
 import retrofit2.Response
 import retrofit2.Retrofit
 import java.text.SimpleDateFormat
+import java.time.Instant
 import javax.inject.Inject
 
 @HiltViewModel
@@ -71,6 +75,11 @@ class ChatViewModel @Inject constructor(
 
                 val from = localUserEntity.phoneNumber
                 val to = chatState.value.selectedContact?.phoneNumber ?: return@withContext emptyList<Message.TextMessage>()
+
+                for(message in messageRepository.getMessages(from, to)) {
+                    Log.d("ChatViewModel", "Message: $message")
+                }
+
                 messageRepository.getMessages(
                     from,
                     to
@@ -112,15 +121,40 @@ class ChatViewModel @Inject constructor(
                         return@launch
                     }
 
-                    val messageDTO = MessageDTO(
-                        from = localUser.phoneNumber,
-                        to = selectedContact,
-                        text = event.message
-                    )
-
                     withContext(Dispatchers.IO) {
+
+                        val nonce =  AuthMessageHelper.generateNonce()
+                        val instant = Instant.now().epochSecond.toString()
+                        val privateKeyBytes = Decoder.decode(userRepository.getLocalUser().privateIdentityKey)
+                        val dataToSign = nonce.plus(Decoder.decode(instant))
+                        val signature = AuthMessageHelper.generateSignature(
+                            privateKeyBytes,
+                            dataToSign
+                        )
+
+                        val messageDTO = MessageDTO(
+                            from = localUser.phoneNumber,
+                            to = selectedContact,
+                            text = event.message,
+                            nonce = nonce,
+                            nonceTimestamp = instant.toLong(),
+                            authMessageSignature = signature,
+                            phoneNumber = localUser.phoneNumber
+                        )
+
                         try {
                             val encryptedMessage = messageEncryptor.encryptMessage(messageDTO)
+                            Log.d("ChatViewModel", "Encrypted message: $encryptedMessage")
+
+                            Log.d("ChatViewModel", "from: ${encryptedMessage?.from}")
+                            Log.d("ChatViewModel", "to: ${encryptedMessage?.to}")
+                            Log.d("ChatViewModel", "cipher: ${encryptedMessage?.cipher}")
+                            Log.d("ChatViewModel", "ephemeralRatchetKey: ${encryptedMessage?.ephemeralRatchetKey}")
+                            Log.d("ChatViewModel", "phone number: ${encryptedMessage?.phoneNumber}")
+                            Log.d("ChatViewModel", "nonce: ${Encoder.encode(encryptedMessage!!.nonce)}")
+                            Log.d("ChatViewModel", "nonceTimestamp: ${encryptedMessage?.nonceTimestamp}")
+                            Log.d("ChatViewModel", "authMessageSignature: ${Encoder.encode(encryptedMessage!!.authMessageSignature)}")
+
                             if(encryptedMessage == null) {
                                 Log.e("ChatViewModel", "EncryptedMessage is null. Sending aborted")
                                 return@withContext

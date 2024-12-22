@@ -1,0 +1,528 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 17,
+    "identityHash": "f701eb25a5b12234620a38288bb62a54",
+    "entities": [
+      {
+        "tableName": "contact_entity",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`phoneNumber` TEXT NOT NULL, `firstName` TEXT NOT NULL, `lastName` TEXT NOT NULL, `photo` TEXT, PRIMARY KEY(`phoneNumber`))",
+        "fields": [
+          {
+            "fieldPath": "phoneNumber",
+            "columnName": "phoneNumber",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "firstName",
+            "columnName": "firstName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastName",
+            "columnName": "lastName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "photo",
+            "columnName": "photo",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "phoneNumber"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "message_entity",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `content` TEXT NOT NULL, `senderPhoneNumber` TEXT NOT NULL, `receiverPhoneNumber` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, FOREIGN KEY(`senderPhoneNumber`) REFERENCES `contact_entity`(`phoneNumber`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`receiverPhoneNumber`) REFERENCES `contact_entity`(`phoneNumber`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "content",
+            "columnName": "content",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "senderPhoneNumber",
+            "columnName": "senderPhoneNumber",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "receiverPhoneNumber",
+            "columnName": "receiverPhoneNumber",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_message_entity_senderPhoneNumber",
+            "unique": false,
+            "columnNames": [
+              "senderPhoneNumber"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_message_entity_senderPhoneNumber` ON `${TABLE_NAME}` (`senderPhoneNumber`)"
+          },
+          {
+            "name": "index_message_entity_receiverPhoneNumber",
+            "unique": false,
+            "columnNames": [
+              "receiverPhoneNumber"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_message_entity_receiverPhoneNumber` ON `${TABLE_NAME}` (`receiverPhoneNumber`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "contact_entity",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "senderPhoneNumber"
+            ],
+            "referencedColumns": [
+              "phoneNumber"
+            ]
+          },
+          {
+            "table": "contact_entity",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "receiverPhoneNumber"
+            ],
+            "referencedColumns": [
+              "phoneNumber"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "user_entity",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`phoneNumber` TEXT NOT NULL, `firstName` TEXT NOT NULL, `lastName` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `publicIdentityKey` TEXT NOT NULL, `privateIdentityKey` TEXT NOT NULL, PRIMARY KEY(`phoneNumber`))",
+        "fields": [
+          {
+            "fieldPath": "phoneNumber",
+            "columnName": "phoneNumber",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "firstName",
+            "columnName": "firstName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastName",
+            "columnName": "lastName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "publicIdentityKey",
+            "columnName": "publicIdentityKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "privateIdentityKey",
+            "columnName": "privateIdentityKey",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "phoneNumber"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "opk_entity",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `privateOPK` TEXT NOT NULL, `publicOPK` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "privateOPK",
+            "columnName": "privateOPK",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "publicOPK",
+            "columnName": "publicOPK",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "spk_entity",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `publicKey` TEXT NOT NULL, `privateKey` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "publicKey",
+            "columnName": "publicKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "privateKey",
+            "columnName": "privateKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "root_key",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`phoneNumber` TEXT NOT NULL, `rootKey` BLOB NOT NULL, PRIMARY KEY(`phoneNumber`))",
+        "fields": [
+          {
+            "fieldPath": "phoneNumber",
+            "columnName": "phoneNumber",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rootKey",
+            "columnName": "rootKey",
+            "affinity": "BLOB",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "phoneNumber"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "sender_chain_key",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `chainKey` BLOB NOT NULL, `chainKeyIndex` INTEGER NOT NULL, `phoneNumber` TEXT NOT NULL, `lastMessageBatchSize` INTEGER NOT NULL, FOREIGN KEY(`phoneNumber`) REFERENCES `root_key`(`phoneNumber`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "chainKey",
+            "columnName": "chainKey",
+            "affinity": "BLOB",
+            "notNull": true
+          },
+          {
+            "fieldPath": "chainKeyIndex",
+            "columnName": "chainKeyIndex",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "phoneNumber",
+            "columnName": "phoneNumber",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastMessageBatchSize",
+            "columnName": "lastMessageBatchSize",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": [
+          {
+            "table": "root_key",
+            "onDelete": "NO ACTION",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "phoneNumber"
+            ],
+            "referencedColumns": [
+              "phoneNumber"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "receiver_chain_key",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`chainKey` BLOB NOT NULL, `publicEphemeralKey` BLOB NOT NULL, `chainKeyIndex` INTEGER NOT NULL, `phoneNumber` TEXT NOT NULL, PRIMARY KEY(`chainKey`), FOREIGN KEY(`phoneNumber`) REFERENCES `root_key`(`phoneNumber`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
+        "fields": [
+          {
+            "fieldPath": "chainKey",
+            "columnName": "chainKey",
+            "affinity": "BLOB",
+            "notNull": true
+          },
+          {
+            "fieldPath": "publicEphemeralKey",
+            "columnName": "publicEphemeralKey",
+            "affinity": "BLOB",
+            "notNull": true
+          },
+          {
+            "fieldPath": "chainKeyIndex",
+            "columnName": "chainKeyIndex",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "phoneNumber",
+            "columnName": "phoneNumber",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "chainKey"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": [
+          {
+            "table": "root_key",
+            "onDelete": "NO ACTION",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "phoneNumber"
+            ],
+            "referencedColumns": [
+              "phoneNumber"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "ephemeral_ratchet_ecc_key_pair",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`phoneNumber` TEXT NOT NULL, `publicKey` BLOB NOT NULL, `privateKey` BLOB NOT NULL, PRIMARY KEY(`phoneNumber`), FOREIGN KEY(`phoneNumber`) REFERENCES `root_key`(`phoneNumber`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
+        "fields": [
+          {
+            "fieldPath": "phoneNumber",
+            "columnName": "phoneNumber",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "publicKey",
+            "columnName": "publicKey",
+            "affinity": "BLOB",
+            "notNull": true
+          },
+          {
+            "fieldPath": "privateKey",
+            "columnName": "privateKey",
+            "affinity": "BLOB",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "phoneNumber"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": [
+          {
+            "table": "root_key",
+            "onDelete": "NO ACTION",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "phoneNumber"
+            ],
+            "referencedColumns": [
+              "phoneNumber"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "message_keys_entity",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `ephemeralRatchetKey` BLOB NOT NULL, `phoneNumber` TEXT NOT NULL, `cipherKey` BLOB NOT NULL, `macKey` BLOB NOT NULL, `iv` BLOB NOT NULL, `index` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ephemeralRatchetKey",
+            "columnName": "ephemeralRatchetKey",
+            "affinity": "BLOB",
+            "notNull": true
+          },
+          {
+            "fieldPath": "phoneNumber",
+            "columnName": "phoneNumber",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cipherKey",
+            "columnName": "cipherKey",
+            "affinity": "BLOB",
+            "notNull": true
+          },
+          {
+            "fieldPath": "macKey",
+            "columnName": "macKey",
+            "affinity": "BLOB",
+            "notNull": true
+          },
+          {
+            "fieldPath": "iv",
+            "columnName": "iv",
+            "affinity": "BLOB",
+            "notNull": true
+          },
+          {
+            "fieldPath": "index",
+            "columnName": "index",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "identity_key",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`phoneNumber` TEXT NOT NULL, `publicKey` BLOB NOT NULL, PRIMARY KEY(`phoneNumber`), FOREIGN KEY(`phoneNumber`) REFERENCES `root_key`(`phoneNumber`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
+        "fields": [
+          {
+            "fieldPath": "phoneNumber",
+            "columnName": "phoneNumber",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "publicKey",
+            "columnName": "publicKey",
+            "affinity": "BLOB",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "phoneNumber"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": [
+          {
+            "table": "root_key",
+            "onDelete": "NO ACTION",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "phoneNumber"
+            ],
+            "referencedColumns": [
+              "phoneNumber"
+            ]
+          }
+        ]
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f701eb25a5b12234620a38288bb62a54')"
+    ]
+  }
+}

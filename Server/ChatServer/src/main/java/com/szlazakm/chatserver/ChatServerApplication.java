@@ -21,21 +21,6 @@ public class ChatServerApplication {
     }
 
     @Bean
-    public RoleHierarchy roleHierarchy() {
-        RoleHierarchyImpl roleHierarchy = new RoleHierarchyImpl();
-        String hierarchy = "ROLE_ADMIN > ROLE_USER \n ROLE_USER > ROLE_USER_UNVERIFIED";
-        roleHierarchy.setHierarchy(hierarchy);
-        return roleHierarchy;
-    }
-
-    @Bean
-    public DefaultWebSecurityExpressionHandler customWebSecurityExpressionHandler() {
-        DefaultWebSecurityExpressionHandler expressionHandler = new DefaultWebSecurityExpressionHandler();
-        expressionHandler.setRoleHierarchy(roleHierarchy());
-        return expressionHandler;
-    }
-
-    @Bean
     public Instant getInstant() {
         return InstantSource.system().instant();
     }

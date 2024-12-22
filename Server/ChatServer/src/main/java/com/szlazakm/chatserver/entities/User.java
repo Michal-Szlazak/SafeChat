@@ -34,13 +34,4 @@ public class User {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OPK> OPKS;
-
-    @ManyToMany
-    @JoinTable(
-            name = "users_roles",
-            joinColumns = @JoinColumn(
-                    name = "user_id", referencedColumnName = "userId"),
-            inverseJoinColumns = @JoinColumn(
-                    name = "role_id", referencedColumnName = "id"))
-    private Collection<Role> roles;
 }

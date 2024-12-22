@@ -62,7 +62,10 @@ fun VerifyPhoneNumberScreen(
             loading = true
             scope.launch {
                 try {
-                    val verified = viewModel.verifyPhoneNumber(viewModel.state.value.phoneNumber)
+                    val verified = viewModel.verifyPhoneNumber(
+                        code = code,
+                        phoneNumber = viewModel.state.value.phoneNumber
+                    )
 
                     if(verified) {
                         onVerifyClick(verified)

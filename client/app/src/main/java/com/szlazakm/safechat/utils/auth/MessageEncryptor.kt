@@ -14,6 +14,7 @@ import com.szlazakm.safechat.client.data.repositories.SenderChainKeyRepository
 import com.szlazakm.safechat.client.data.repositories.UserRepository
 import com.szlazakm.safechat.utils.auth.alice.AliceEncryptionSessionInitializer
 import com.szlazakm.safechat.utils.auth.alice.InitialMessageEncryptionBundle
+import com.szlazakm.safechat.utils.auth.ecc.AuthMessageHelper
 import com.szlazakm.safechat.utils.auth.ecc.ChainKey
 import com.szlazakm.safechat.utils.auth.utils.Decoder
 import com.szlazakm.safechat.utils.auth.utils.Encoder
@@ -24,6 +25,7 @@ import com.szlazakm.safechat.webclient.dtos.MessageDTO
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.nio.charset.StandardCharsets
+import java.time.Instant
 import javax.crypto.Cipher
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -69,6 +71,15 @@ class MessageEncryptor @Inject constructor(
                 encryptedMessage = cipherText
             )
 
+            val nonce =  AuthMessageHelper.generateNonce()
+            val instant = Instant.now().epochSecond.toString()
+            val privateKeyBytes = Decoder.decode(userRepository.getLocalUser().privateIdentityKey)
+            val dataToSign = nonce.plus(Decoder.decode(instant))
+            val signature = AuthMessageHelper.generateSignature(
+                privateKeyBytes,
+                dataToSign
+            )
+
             val encryptedMessageDTO = EncryptedMessageDTO(
                 initial = true,
                 messageDTO.from,
@@ -80,7 +91,11 @@ class MessageEncryptor @Inject constructor(
                 initialMessageEncryptionBundle.bobSignedPreKeyId,
                 Encoder.encode(initialMessageEncryptionBundle.aliceEphemeralRatchetEccKeyPair.publicKey),
                 chainKey.index,
-                session.senderChainKeyEntity.lastMessageBatchSize
+                session.senderChainKeyEntity.lastMessageBatchSize,
+                localUser.phoneNumber,
+                instant.toLong(),
+                nonce,
+                signature
             )
 
             chainKey = chainKey.getNextChainKey()
@@ -119,6 +134,14 @@ class MessageEncryptor @Inject constructor(
                 senderPublicKey = Decoder.decode(localUser.publicIdentityKey),
                 encryptedMessage = cipherText
             )
+            val nonce =  AuthMessageHelper.generateNonce()
+            val instant = Instant.now().epochSecond.toString()
+            val privateKeyBytes = Decoder.decode(userRepository.getLocalUser().privateIdentityKey)
+            val dataToSign = nonce.plus(Decoder.decode(instant))
+            val signature = AuthMessageHelper.generateSignature(
+                privateKeyBytes,
+                dataToSign
+            )
 
             val encryptedMessageDTO = EncryptedMessageDTO(
                 initial = false,
@@ -131,7 +154,11 @@ class MessageEncryptor @Inject constructor(
                 bobSpkId = null,
                 ephemeralRatchetKey = Encoder.encode(encryptionSession.ephemeralRatchetEccKeyPairEntity.publicKey),
                 messageIndex = chainKey.index,
-                lastMessageBatchSize = chainKeyEntity.lastMessageBatchSize
+                lastMessageBatchSize = chainKeyEntity.lastMessageBatchSize,
+                phoneNumber = localUser.phoneNumber,
+                nonceTimestamp = instant.toLong(),
+                nonce = nonce,
+                authMessageSignature = signature
             )
 
             chainKey = chainKey.getNextChainKey()

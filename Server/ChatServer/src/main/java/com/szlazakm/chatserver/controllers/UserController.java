@@ -3,6 +3,7 @@ package com.szlazakm.chatserver.controllers;
 import com.szlazakm.chatserver.dtos.*;
 import com.szlazakm.chatserver.dtos.response.KeyBundleDTO;
 import com.szlazakm.chatserver.dtos.response.UserDTO;
+import com.szlazakm.chatserver.services.NonceService;
 import com.szlazakm.chatserver.services.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,6 +21,7 @@ public class UserController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public UUID createUser(@RequestBody UserCreateDTO userCreateDTO) {
+
         return userService.createUser(userCreateDTO);
     }
 

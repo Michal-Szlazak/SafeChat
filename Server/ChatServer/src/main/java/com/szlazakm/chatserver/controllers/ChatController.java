@@ -1,15 +1,18 @@
 package com.szlazakm.chatserver.controllers;
 
+import com.szlazakm.chatserver.dtos.GetMessagesDTO;
 import com.szlazakm.chatserver.dtos.MessageAcknowledgementDTO;
 import com.szlazakm.chatserver.dtos.EncryptedMessageDTO;
 import com.szlazakm.chatserver.dtos.response.MessageSentResponseDto;
 import com.szlazakm.chatserver.dtos.response.OutputEncryptedMessageDTO;
 import com.szlazakm.chatserver.entities.Message;
-import com.szlazakm.chatserver.exceptionHandling.exceptions.ExpiredNonceException;
-import com.szlazakm.chatserver.exceptionHandling.exceptions.ReusedNonceException;
+import com.szlazakm.chatserver.exceptionHandling.exceptions.UnverifiedUserException;
 import com.szlazakm.chatserver.services.MessageService;
 import com.szlazakm.chatserver.services.NonceService;
+import com.szlazakm.chatserver.utils.AuthHelper;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -23,23 +26,37 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
+@Slf4j
 public class ChatController {
 
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final MessageService messageService;
-    private final Instant instant;
     private final NonceService nonceService;
+    private final AuthHelper authHelper;
 
     @PostMapping("/room")
     @ResponseStatus(HttpStatus.CREATED)
     public MessageSentResponseDto sendMessage(@RequestBody EncryptedMessageDTO msg){
 
-        nonceService.handleAuthMessage(msg);
+        boolean isUserVerified = authHelper.verifyUser(msg.getPhoneNumber());
 
-        String timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(
-                new Date(instant.getEpochSecond() * 1000)
+        if(!isUserVerified) {
+            throw new UnverifiedUserException();
+        }
+
+//        nonceService.handleAuthMessage(
+//                msg.getPhoneNumber(),
+//                msg.getNonce(),
+//                msg.getNonceTimestamp(),
+//                msg.getAuthMessageSignature()
+//        );
+
+        Instant instant = Instant.now();
+        String timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS").format(
+                new Date(instant.toEpochMilli())
         );
 
+        log.info("Timestamp: " + timestamp);
         Message message = Message.builder()
                 .isInitial(msg.isInitial())
                 .toPhoneNumber(msg.getTo())
@@ -63,7 +80,7 @@ public class ChatController {
         if(msg.isInitial()) {
             out = OutputEncryptedMessageDTO.builder()
                     .id(messageId)
-                    .initial(false)
+                    .initial(true)
                     .from(msg.getFrom())
                     .to(msg.getTo())
                     .cipher(msg.getCipher())
@@ -97,14 +114,40 @@ public class ChatController {
     }
 
     @PostMapping("/acknowledge")
-    public void acknowledgeMessage(@RequestBody MessageAcknowledgementDTO messageAcknowledgementDTO) {
+    public void acknowledgeMessage(@RequestBody MessageAcknowledgementDTO msg) {
 
-        messageService.acknowledgeMessage(messageAcknowledgementDTO);
+        boolean isUserVerified = authHelper.verifyUser(msg.getPhoneNumber());
+
+        if(!isUserVerified) {
+            throw new UnverifiedUserException();
+        }
+
+        nonceService.handleAuthMessage(
+                msg.getPhoneNumber(),
+                msg.getNonce(),
+                msg.getNonceTimestamp(),
+                msg.getAuthMessageSignature()
+        );
+
+        messageService.acknowledgeMessage(msg);
     }
 
-    @GetMapping("/newMessages/{to}")
-    public List<OutputEncryptedMessageDTO> getAllNewMessages(@PathVariable("to") String toPhoneNumber) {
+    @PostMapping("/newMessages")
+    public List<OutputEncryptedMessageDTO> getAllNewMessages(@RequestBody GetMessagesDTO getMessagesDTO) {
 
-        return messageService.getAllNewMessages(toPhoneNumber);
+        boolean isUserVerified = authHelper.verifyUser(getMessagesDTO.getPhoneNumber());
+
+        if(!isUserVerified) {
+            throw new UnverifiedUserException();
+        }
+
+        nonceService.handleAuthMessage(
+                getMessagesDTO.getPhoneNumber(),
+                getMessagesDTO.getNonce(),
+                getMessagesDTO.getNonceTimestamp(),
+                getMessagesDTO.getAuthMessageSignature()
+        );
+
+        return messageService.getAllNewMessages(getMessagesDTO.getPhoneNumber());
     }
 }

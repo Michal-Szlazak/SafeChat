@@ -11,7 +11,7 @@ import java.util.UUID;
 @Jacksonized
 @Data
 @ToString
-public class EncryptedMessageDTO extends AuthMessage {
+public class EncryptedMessageDTO {
     boolean initial;
     UUID id;
     String from;
@@ -24,4 +24,8 @@ public class EncryptedMessageDTO extends AuthMessage {
     String ephemeralRatchetKey;
     int messageIndex;
     int lastMessageBatchSize;
+    String phoneNumber;
+    Long nonceTimestamp;
+    byte[] nonce;
+    byte[] authMessageSignature;
 }

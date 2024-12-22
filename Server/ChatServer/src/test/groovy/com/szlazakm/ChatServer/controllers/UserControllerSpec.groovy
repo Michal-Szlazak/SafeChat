@@ -3,13 +3,19 @@ package com.szlazakm.ChatServer.controllers
 import com.szlazakm.ChatServer.helpers.TestUserProvider
 import com.szlazakm.chatserver.controllers.UserController
 import com.szlazakm.chatserver.dtos.VerifyPhoneNumberDTO
+import com.szlazakm.chatserver.repositories.UserRepository
+import com.szlazakm.chatserver.services.NonceService
 import com.szlazakm.chatserver.services.UserService
+import com.szlazakm.chatserver.utils.SignatureVerifier
 import spock.lang.Specification
 
 class UserControllerSpec extends Specification {
 
     def userService = Mock(UserService)
-    def userController = new UserController(userService)
+    def userRepository = Mock(UserRepository)
+    def signatureVerifier = new SignatureVerifier()
+    def nonceService = new NonceService(signatureVerifier, userRepository)
+    def userController = new UserController(userService, nonceService)
 
     def "should call service user create on POST user"() {
 

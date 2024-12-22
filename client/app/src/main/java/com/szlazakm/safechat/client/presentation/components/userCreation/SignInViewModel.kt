@@ -14,6 +14,9 @@ import com.szlazakm.safechat.client.presentation.MainScreenRoutes
 import com.szlazakm.safechat.client.presentation.UserCreationScreenRoutes
 import com.szlazakm.safechat.client.presentation.states.SignInState
 import com.szlazakm.safechat.utils.auth.PreKeyManager
+import com.szlazakm.safechat.utils.auth.ecc.AuthMessageHelper
+import com.szlazakm.safechat.utils.auth.utils.Decoder
+import com.szlazakm.safechat.utils.auth.utils.Encoder
 import com.szlazakm.safechat.webclient.dtos.UserCreateDTO
 import com.szlazakm.safechat.webclient.dtos.VerifyPhoneNumberDTO
 import com.szlazakm.safechat.webclient.webservices.UserWebService
@@ -24,6 +27,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.invoke
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.time.Instant
 import java.util.Base64
 import java.util.Date
 import javax.inject.Inject
@@ -50,8 +55,8 @@ class SignInViewModel @Inject constructor(
         }
     }
 
-    suspend fun verifyPhoneNumber(code: String): Boolean {
-        val verifyPhoneNumberDTO = VerifyPhoneNumberDTO(code)
+    suspend fun verifyPhoneNumber(code: String, phoneNumber: String): Boolean {
+        val verifyPhoneNumberDTO = VerifyPhoneNumberDTO(code, phoneNumber)
 
         return (Dispatchers.IO) {
             try {
@@ -78,25 +83,38 @@ class SignInViewModel @Inject constructor(
         )
     }
 
+    fun saveUserKeys() {
+
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                preKeyManager.setSignedPreKey()
+                preKeyManager.checkAndProvideOPK()
+            }
+        }
+    }
+
     fun saveUser(
         navController: NavController,
-        successDestination: MainScreenRoutes,
+        successDestination: UserCreationScreenRoutes,
         failureDestination: UserCreationScreenRoutes
     ) {
 
         val keyPair = preKeyManager.generateIdentityKeys()
 
-        val userCreateDTO = UserCreateDTO(
-            firstName = state.value.firstName,
-            lastName = state.value.lastName,
-            phoneNumber = state.value.phoneNumber,
-            identityKey = encode(keyPair.publicKey),
-            pin = state.value.pin
-        )
-
         viewModelScope.launch {
+
             try {
+
                 val response = withContext(Dispatchers.IO) {
+
+                    val userCreateDTO = UserCreateDTO(
+                        firstName = state.value.firstName,
+                        lastName = state.value.lastName,
+                        phoneNumber = state.value.phoneNumber,
+                        identityKey = encode(keyPair.publicKey),
+                        pin = state.value.pin
+                    )
+
                     userWebService.createUser(userCreateDTO).execute()
                 }
                 if (response.isSuccessful) {
@@ -123,8 +141,8 @@ class SignInViewModel @Inject constructor(
                     withContext(Dispatchers.IO) {
                         userRepository.createUser(user)
                         contactRepository.createContact(localUserContact)
-                        preKeyManager.setSignedPreKey()
-                        preKeyManager.checkAndProvideOPK()
+//                        preKeyManager.setSignedPreKey()
+//                        preKeyManager.checkAndProvideOPK()
                         loadMessageSaverService()
                         loadLocalUserData()
                     }

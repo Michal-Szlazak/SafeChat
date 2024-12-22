@@ -37,6 +37,8 @@ class EccKeyHelper() {
             return EccKeyPair(privKeyBytes, pubKeyBytes)
         }
 
+
+
         fun generateSignedKeyPair(privateIdentityKey: ByteArray): EccSignedKeyPair {
 
             Log.i("EccKeyHelper", "Generating signed key pair")

@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.UUID;
 
+import static java.util.stream.Collectors.toList;
+
 @Service
 @RequiredArgsConstructor
 public class MessageService {
@@ -35,22 +37,22 @@ public class MessageService {
                 message -> messageRepository.deleteById(message.getMessageId())
         );
 
-        return newMessages.stream().map(
-                message -> new OutputEncryptedMessageDTO(
-                        message.getMessageId(),
-                        message.isInitial(),
-                        message.getFromPhoneNumber(),
-                        message.getToPhoneNumber(),
-                        message.getCipher(),
-                        message.getAliceIdentityPublicKey(),
-                        message.getAliceEphemeralPublicKey(),
-                        message.getBobOpkId(),
-                        message.getBobSpkId(),
-                        message.getTimestamp(),
-                        message.getEphemeralRatchetKey(),
-                        message.getMessageIndex(),
-                        message.getLastMessageBatchSize()
-                )
+        return (List<OutputEncryptedMessageDTO>) newMessages.stream().map(
+                message -> OutputEncryptedMessageDTO.builder()
+                        .id(message.getMessageId())
+                        .initial(message.isInitial())
+                        .from(message.getFromPhoneNumber())
+                        .to(message.getToPhoneNumber())
+                        .cipher(message.getCipher())
+                        .aliceIdentityPublicKey(message.getAliceIdentityPublicKey())
+                        .aliceEphemeralPublicKey(message.getAliceEphemeralPublicKey())
+                        .bobOpkId(message.getBobOpkId())
+                        .bobSpkId(message.getBobSpkId())
+                        .date(message.getTimestamp())
+                        .ephemeralRatchetKey(message.getEphemeralRatchetKey())
+                        .messageIndex(message.getMessageIndex())
+                        .lastMessageBatchSize(message.getLastMessageBatchSize())
+                        .build()
         ).toList();
     }
 }
