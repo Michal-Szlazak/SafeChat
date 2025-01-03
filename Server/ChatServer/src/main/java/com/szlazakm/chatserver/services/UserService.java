@@ -94,12 +94,6 @@ public class UserService {
         user.setVerified(true);
         userRepository.save(user);
 
-        try {
-            TimeUnit.SECONDS.sleep(1);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-
         //TODO - code verification
         return true;
     }
