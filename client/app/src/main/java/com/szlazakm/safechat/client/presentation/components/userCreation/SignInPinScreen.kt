@@ -1,6 +1,8 @@
 package com.szlazakm.safechat.client.presentation.components.userCreation
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Button
 import androidx.compose.material.Text
@@ -22,7 +24,8 @@ fun PinScreen(
     var pin by remember { mutableStateOf("") }
 
     Column(
-        modifier = Modifier.padding(16.dp),
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         TextField(
@@ -45,7 +48,8 @@ fun VerifyPinScreen(
     var enteredPin by remember { mutableStateOf("") }
 
     Column(
-        modifier = Modifier.padding(16.dp),
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         TextField(

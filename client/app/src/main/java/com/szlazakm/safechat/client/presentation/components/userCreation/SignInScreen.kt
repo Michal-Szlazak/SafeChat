@@ -37,11 +37,7 @@ fun SignInScreen(
     LaunchedEffect(state.phoneVerifyError) {
 
         state.phoneVerifyError.let { error ->
-            Toast.makeText(
-                context,
-                error,
-                Toast.LENGTH_LONG
-            ).show()
+            Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
         }
     }
 

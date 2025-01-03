@@ -46,9 +46,9 @@ fun VerifyPhoneNumberScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text = "Enter Verification Code", modifier = Modifier.padding(bottom = 16.dp))
         TextField(
             value = code,
+            placeholder = { Text("Enter Verification Code") },
             onValueChange = { code = it },
             singleLine = true,
             keyboardOptions = KeyboardOptions.Default.copy(
