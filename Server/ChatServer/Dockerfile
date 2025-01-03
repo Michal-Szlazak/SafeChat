@@ -1,4 +1,4 @@
-FROM openjdk:21 AS build
+FROM gradle:jdk21 AS build
 WORKDIR /my-project
 
 COPY gradle/ gradle/
@@ -11,7 +11,7 @@ RUN chmod +x gradlew
 RUN ./gradlew clean bootJar
 
 
-FROM openjdk:21
+FROM gradle:jdk21
 WORKDIR /my-project
 COPY --from=build /my-project/build/libs/*.jar app.jar
 
