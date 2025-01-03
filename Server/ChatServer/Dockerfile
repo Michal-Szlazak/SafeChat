@@ -1,4 +1,4 @@
-FROM openjdk:21 AS builder
+FROM openjdk:21 AS build
 WORKDIR /my-project
 
 COPY gradle/ gradle/
