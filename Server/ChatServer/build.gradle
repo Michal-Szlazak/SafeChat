@@ -10,6 +10,10 @@ group = 'com.szlazakm'
 version = '0.0.1-SNAPSHOT'
 sourceCompatibility = '17'
 
+springBoot {
+    mainClass = 'com.szlazakm.chatserver.ChatServerApplication'
+}
+
 bootJar {
     enabled = true
 }
