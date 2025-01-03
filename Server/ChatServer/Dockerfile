@@ -12,7 +12,7 @@ RUN ./gradlew clean bootJar
 
 FROM openjdk:21
 WORKDIR /my-project
-COPY --from=build build/libs/*.jar app.jar
+COPY --from=build /my-project/build/libs/*.jar app.jar
 
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
