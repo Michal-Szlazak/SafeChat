@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.szlazakm.safechat.AppDatabase
 import com.szlazakm.safechat.client.data.entities.UserEntity
+import com.szlazakm.safechat.excpetions.LocalUserNotFoundException
 import javax.inject.Inject
 
 class UserRepository @Inject constructor(context: Context) {
@@ -21,7 +22,9 @@ class UserRepository @Inject constructor(context: Context) {
         database.userDao().insertUser(userEntity)
     }
 
-    fun getLocalUser() : UserEntity? {
-        return database.userDao().getUser()
+    @Throws(LocalUserNotFoundException::class)
+    fun getLocalUser(): UserEntity {
+
+        return database.userDao().getUser() ?: throw LocalUserNotFoundException()
     }
 }

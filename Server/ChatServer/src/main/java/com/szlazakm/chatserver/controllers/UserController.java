@@ -1,12 +1,15 @@
 package com.szlazakm.chatserver.controllers;
 
 import com.szlazakm.chatserver.dtos.*;
+import com.szlazakm.chatserver.dtos.response.KeyBundleDTO;
+import com.szlazakm.chatserver.dtos.response.UserDTO;
+import com.szlazakm.chatserver.services.NonceService;
 import com.szlazakm.chatserver.services.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-import java.security.SignatureException;
+import java.util.UUID;
 
 @RestController()
 @RequestMapping("/api/user")
@@ -17,15 +20,11 @@ public class UserController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public void createUser(@RequestBody UserCreateDTO userCreateDTO) {
-        userService.createUser(userCreateDTO);
+    public UUID createUser(@RequestBody UserCreateDTO userCreateDTO) {
+
+        return userService.createUser(userCreateDTO);
     }
 
-    @PostMapping("/spk")
-    @ResponseStatus(HttpStatus.CREATED)
-    public void addSpk(@RequestBody SPKCreateDTO spkCreateDTO) throws SignatureException {
-        userService.createSPK(spkCreateDTO);
-    }
 
     @GetMapping
     public UserDTO getUser(@RequestParam String phoneNumber) {

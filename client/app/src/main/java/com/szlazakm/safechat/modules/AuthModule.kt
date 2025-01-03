@@ -1,13 +1,18 @@
 package com.szlazakm.safechat.modules
 
-import com.szlazakm.safechat.client.data.repositories.EncryptionSessionRepository
+import com.szlazakm.safechat.client.data.repositories.EphemeralRatchetKeyPairRepository
+import com.szlazakm.safechat.client.data.repositories.IdentityKeyRepository
+import com.szlazakm.safechat.client.data.repositories.MessageKeysRepository
 import com.szlazakm.safechat.client.data.repositories.PreKeyRepository
+import com.szlazakm.safechat.client.data.repositories.ReceiverChainKeyRepository
+import com.szlazakm.safechat.client.data.repositories.RootKeyRepository
+import com.szlazakm.safechat.client.data.repositories.SenderChainKeyRepository
 import com.szlazakm.safechat.client.data.repositories.UserRepository
 import com.szlazakm.safechat.client.data.services.PreKeyService
-import com.szlazakm.safechat.utils.auth.AliceEncryptionSessionInitializer
-import com.szlazakm.safechat.utils.auth.BobDecryptionSessionInitializer
-import com.szlazakm.safechat.utils.auth.EncryptedMessageReceiver
-import com.szlazakm.safechat.utils.auth.EncryptedMessageSender
+import com.szlazakm.safechat.utils.auth.alice.AliceEncryptionSessionInitializer
+import com.szlazakm.safechat.utils.auth.bob.BobDecryptionSessionInitializer
+import com.szlazakm.safechat.utils.auth.MessageDecryptor
+import com.szlazakm.safechat.utils.auth.MessageEncryptor
 import com.szlazakm.safechat.utils.auth.PreKeyManager
 import com.szlazakm.safechat.webclient.webservices.PreKeyWebService
 import com.szlazakm.safechat.webclient.webservices.UserWebService
@@ -46,18 +51,44 @@ class AuthModule {
 
     @Provides
     fun provideEncryptedMessageSender(
+        userRepository: UserRepository,
         aliceEncryptionSessionInitializer: AliceEncryptionSessionInitializer,
-        encryptionSessionRepository: EncryptionSessionRepository
-    ): EncryptedMessageSender {
-        return EncryptedMessageSender(aliceEncryptionSessionInitializer, encryptionSessionRepository)
+        rootKeyRepository: RootKeyRepository,
+        senderChainKeyRepository: SenderChainKeyRepository,
+        ephemeralRatchetKeyPairRepository: EphemeralRatchetKeyPairRepository,
+        identityKeyRepository: IdentityKeyRepository
+    ): MessageEncryptor {
+        return MessageEncryptor(
+            userRepository,
+            aliceEncryptionSessionInitializer,
+            rootKeyRepository,
+            senderChainKeyRepository,
+            ephemeralRatchetKeyPairRepository,
+            identityKeyRepository
+        )
     }
 
     @Provides
-    fun provideEncryptedMessageReceiver(
-        encryptionSessionRepository: EncryptionSessionRepository,
-        bobDecryptionSessionInitializer: BobDecryptionSessionInitializer
-    ): EncryptedMessageReceiver {
-        return EncryptedMessageReceiver(encryptionSessionRepository, bobDecryptionSessionInitializer)
+    fun provideMessageDecryptor(
+        userRepository: UserRepository,
+        bobDecryptionSessionInitializer: BobDecryptionSessionInitializer,
+        rootKeyRepository: RootKeyRepository,
+        receiverChainKeyRepository: ReceiverChainKeyRepository,
+        senderChainKeyRepository: SenderChainKeyRepository,
+        messageKeysRepository: MessageKeysRepository,
+        identityKeyRepository: IdentityKeyRepository,
+        ephemeralRatchetKeyPairRepository: EphemeralRatchetKeyPairRepository
+    ): MessageDecryptor {
+        return MessageDecryptor(
+            userRepository,
+            bobDecryptionSessionInitializer,
+            rootKeyRepository,
+            receiverChainKeyRepository,
+            senderChainKeyRepository,
+            messageKeysRepository,
+            identityKeyRepository,
+            ephemeralRatchetKeyPairRepository
+        )
     }
 
     @Provides

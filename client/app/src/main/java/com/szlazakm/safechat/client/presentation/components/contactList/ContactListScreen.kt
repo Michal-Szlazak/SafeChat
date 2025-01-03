@@ -28,8 +28,8 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.szlazakm.safechat.client.data.entities.ContactEntity
 import com.szlazakm.safechat.client.data.entities.toContact
+import com.szlazakm.safechat.client.presentation.MainScreenRoutes
 import com.szlazakm.safechat.client.presentation.events.ContactListEvent
-import com.szlazakm.safechat.client.presentation.ScreenRoutes
 import com.szlazakm.safechat.client.presentation.components.chat.ChatViewModel
 
 @Composable
@@ -46,7 +46,7 @@ fun ContactListScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    navController.navigate(ScreenRoutes.AddContact.route)
+                    navController.navigate(MainScreenRoutes.AddContact.route)
                 },
                 shape = RoundedCornerShape(20.dp)
                 ) {
@@ -82,9 +82,10 @@ fun ContactListScreen(
                         .fillMaxWidth()
                         .clickable {
                             viewModel.onEvent(ContactListEvent.OnConversationClick(contact))
+                            Log.i("ContactListScreen", "Contact clicked: ${contact.phoneNumber}")
                             chatViewModel.setContact(contact)
                             navController.navigate(
-                                ScreenRoutes.Chat.route.replace("{phoneNumber}", contact.phoneNumber)
+                                MainScreenRoutes.Chat.route.replace("{phoneNumber}", contact.phoneNumber)
                             )
                         }
                         .padding(horizontal = 16.dp)

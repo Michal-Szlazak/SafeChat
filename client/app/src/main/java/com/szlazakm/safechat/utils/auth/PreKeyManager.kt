@@ -3,23 +3,25 @@ package com.szlazakm.safechat.utils.auth
 import android.util.Log
 import com.szlazakm.safechat.client.data.repositories.UserRepository
 import com.szlazakm.safechat.client.data.services.PreKeyService
+import com.szlazakm.safechat.excpetions.LocalUserNotFoundException
+import com.szlazakm.safechat.utils.auth.ecc.AuthMessageHelper
 import com.szlazakm.safechat.utils.auth.ecc.EccKeyHelper
 import com.szlazakm.safechat.utils.auth.ecc.EccKeyPair
 import com.szlazakm.safechat.utils.auth.ecc.EccOpk
+import com.szlazakm.safechat.utils.auth.utils.Decoder
+import com.szlazakm.safechat.utils.auth.utils.Encoder
+import com.szlazakm.safechat.utils.auth.utils.Helpers
+import com.szlazakm.safechat.webclient.dtos.GetOpksDTO
 import com.szlazakm.safechat.webclient.dtos.OPKCreateDTO
 import com.szlazakm.safechat.webclient.dtos.OPKsCreateDTO
 import com.szlazakm.safechat.webclient.dtos.SPKCreateDTO
 import com.szlazakm.safechat.webclient.webservices.PreKeyWebService
-import org.whispersystems.libsignal.IdentityKeyPair
-import org.whispersystems.libsignal.ecc.Curve
-import org.whispersystems.libsignal.ecc.DjbECPublicKey
-import org.whispersystems.libsignal.state.PreKeyRecord
-import org.whispersystems.libsignal.state.SignedPreKeyRecord
-import org.whispersystems.libsignal.util.KeyHelper
+import java.text.SimpleDateFormat
+import java.time.Instant
 import java.util.Base64
+import java.util.Date
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.random.Random
 
 @Singleton
 class PreKeyManager @Inject constructor(
@@ -30,19 +32,26 @@ class PreKeyManager @Inject constructor(
 
     fun checkAndProvideOPK() {
 
-        val localUser = userRepository.getLocalUser()
-
-        if(localUser == null) {
-            Log.d(
-                "PreKeyManager",
-                "Cannot check and provide OPKs - local user is not present."
-            )
-            return
-        }
-
         try {
+            val localUser = userRepository.getLocalUser()
+
+            val nonce =  AuthMessageHelper.generateNonce()
+            val instant = Instant.now().epochSecond.toString()
+            val privateKeyBytes = Decoder.decode(userRepository.getLocalUser().privateIdentityKey)
+            val dataToSign = nonce.plus(Decoder.decode(instant))
+            val signature = AuthMessageHelper.generateSignature(
+                privateKeyBytes,
+                dataToSign
+            )
+
+            val getOpksDTO = GetOpksDTO(
+                phoneNumber = localUser.phoneNumber,
+                nonce = nonce,
+                nonceTimestamp = instant.toLong(),
+                authMessageSignature = signature
+            )
             val response = preKeyWebService
-                .getUnusedOPKIdsByPhoneNumber(localUser.phoneNumber).execute()
+                .getUnusedOPKIdsByPhoneNumber(getOpksDTO).execute()
 
             if(response.isSuccessful) {
                 val unusedOPKIds = response.body()
@@ -72,10 +81,19 @@ class PreKeyManager @Inject constructor(
                 )
                 return
             }
-        } catch (e: Exception) {
+
+        } catch (e: LocalUserNotFoundException) {
+
             Log.e(
                 "PreKeyManager",
-                "Error while trying to get opks: ${e.message}"
+                "Error while trying to get local user: ${e.message}"
+            )
+            return
+        } catch (e: Exception) {
+
+            Log.e(
+                "PreKeyManager",
+                "Unknown Exception thrown in PreKeyManager: ${e.message}"
             )
             return
         }
@@ -92,30 +110,27 @@ class PreKeyManager @Inject constructor(
             return
         }
 
-//        val normalizedIdentityKeyPair = decode(localUser.identityKeyPair)
-//        val identityKeyPair = IdentityKeyPair(normalizedIdentityKeyPair)
-//        val signedPreKeys = Curve.generateKeyPair()
-//        val signature = Curve.calculateSignature(identityKeyPair.privateKey, (signedPreKeys.publicKey as DjbECPublicKey).publicKey)
-//        val keyId = Random.nextInt(Int.MAX_VALUE)
-//        val publicSignedPrekey = signedPreKeys.publicKey as DjbECPublicKey
-//        val timestamp = System.currentTimeMillis()
-//        val spkCreateDTO = SPKCreateDTO(
-//            phoneNumber = localUser.phoneNumber,
-//            id = keyId,
-//            signedPreKey = encode(publicSignedPrekey.publicKey),
-//            signature = encode(signature),
-//            timestamp = timestamp
-//        )
-
         val privateIdentityKey = decode(localUser.privateIdentityKey)
         val signedPreKeys = EccKeyHelper.generateSignedKeyPair(privateIdentityKey)
+
+        val nonce =  AuthMessageHelper.generateNonce()
+        val instant = Instant.now().epochSecond.toString()
+        val privateKeyBytes = Decoder.decode(userRepository.getLocalUser().privateIdentityKey)
+        val dataToSign = nonce.plus(Decoder.decode(instant))
+        val signature = AuthMessageHelper.generateSignature(
+            privateKeyBytes,
+            dataToSign
+        )
 
         val spkCreateDTO = SPKCreateDTO(
             phoneNumber = localUser.phoneNumber,
             id = signedPreKeys.id,
             signedPreKey = encode(signedPreKeys.publicKey),
             signature = encode(signedPreKeys.signature),
-            timestamp = signedPreKeys.timestamp
+            timestamp = signedPreKeys.timestamp,
+            nonce = nonce,
+            authMessageSignature = signature,
+            nonceTimestamp = instant.toLong()
         )
 
         preKeyService.createNewSPK(signedPreKeys)
@@ -150,9 +165,23 @@ class PreKeyManager @Inject constructor(
             )
         }
 
+        val nonce =  AuthMessageHelper.generateNonce()
+        val instant = Instant.now().epochSecond.toString()
+        val privateKeyBytes = Decoder.decode(userRepository.getLocalUser().privateIdentityKey)
+        val dataToSign = nonce.plus(Decoder.decode(instant))
+        val dataBase64 = Encoder.encode(dataToSign)
+        Log.d("PreKeyManager", "Data to sign: $dataBase64")
+        val signature = AuthMessageHelper.generateSignature(
+            privateKeyBytes,
+            dataToSign
+        )
+
         val opksCreateDTO = OPKsCreateDTO(
             phoneNumber = phoneNumber,
-            opkCreateDTOs = opkCreateDTOs
+            opkCreateDTOs = opkCreateDTOs,
+            nonce = nonce,
+            nonceTimestamp = instant.toLong(),
+            authMessageSignature = signature,
         )
 
         Log.d(
@@ -186,4 +215,6 @@ class PreKeyManager @Inject constructor(
     private fun decode(string: String): ByteArray {
         return Base64.getDecoder().decode(string)
     }
+
+    open fun ByteArray.toHexString() = joinToString("") { "%02x".format(it) }
 }

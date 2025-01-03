@@ -1,6 +1,7 @@
 package com.szlazakm.safechat.webclient.dtos
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import java.time.Instant
 import java.util.UUID
 
 data class OutputEncryptedMessageDTO(
@@ -23,5 +24,11 @@ data class OutputEncryptedMessageDTO(
     @JsonProperty("bobSpkId")
     val bobSpkId: Int?,
     @JsonProperty("date")
-    val date: String
+    val date: String,
+    @JsonProperty("ephemeralRatchetKey")
+    val ephemeralRatchetKey: String,
+    @JsonProperty("messageIndex")
+    val messageIndex: Int,
+    @JsonProperty("lastMessageBatchSize")
+    val lastMessageBatchSize: Int
 )

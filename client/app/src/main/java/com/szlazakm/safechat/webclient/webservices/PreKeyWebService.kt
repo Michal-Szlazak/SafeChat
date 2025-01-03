@@ -1,5 +1,6 @@
 package com.szlazakm.safechat.webclient.webservices
 
+import com.szlazakm.safechat.webclient.dtos.GetOpksDTO
 import com.szlazakm.safechat.webclient.dtos.OPKsCreateDTO
 import com.szlazakm.safechat.webclient.dtos.SPKCreateDTO
 import retrofit2.Call
@@ -13,9 +14,9 @@ interface PreKeyWebService {
     @POST("/api/opk")
     fun createOPKs(@Body opksCreateDTO: OPKsCreateDTO): Call<Void>
 
-    @GET("/api/opk/{phoneNumber}")
-    fun getUnusedOPKIdsByPhoneNumber(@Path("phoneNumber") phoneNumber: String): Call<List<Int>>
+    @POST("/api/opks")
+    fun getUnusedOPKIdsByPhoneNumber(@Body getOpksDTO: GetOpksDTO): Call<List<Int>>
 
-    @POST("/api/user/spk")
+    @POST("/api/spk")
     fun  addNewSPK(@Body spkCreateDTO: SPKCreateDTO): Call<Void>
 }

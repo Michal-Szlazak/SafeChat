@@ -6,11 +6,16 @@ import android.os.IBinder
 import android.util.Log
 import com.google.gson.Gson
 import com.szlazakm.safechat.client.data.entities.MessageEntity
+import com.szlazakm.safechat.client.data.entities.UserEntity
 import com.szlazakm.safechat.client.data.repositories.ContactRepository
 import com.szlazakm.safechat.client.data.repositories.MessageRepository
 import com.szlazakm.safechat.client.data.repositories.UserRepository
 import com.szlazakm.safechat.client.domain.Contact
-import com.szlazakm.safechat.utils.auth.EncryptedMessageReceiver
+import com.szlazakm.safechat.utils.auth.MessageDecryptor
+import com.szlazakm.safechat.utils.auth.ecc.AuthMessageHelper
+import com.szlazakm.safechat.utils.auth.utils.Decoder
+import com.szlazakm.safechat.utils.auth.utils.Encoder
+import com.szlazakm.safechat.webclient.dtos.GetMessagesDTO
 import com.szlazakm.safechat.webclient.dtos.MessageAcknowledgementDTO
 import com.szlazakm.safechat.webclient.dtos.OutputEncryptedMessageDTO
 import com.szlazakm.safechat.webclient.dtos.UserDTO
@@ -24,6 +29,7 @@ import kotlinx.coroutines.withContext
 import retrofit2.Response
 import retrofit2.Retrofit
 import java.text.SimpleDateFormat
+import java.time.Instant
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -38,7 +44,7 @@ class MessageSaverService : Service(){
     @Inject
     lateinit var retrofit: Retrofit
     @Inject
-    lateinit var encryptedMessageReceiver: EncryptedMessageReceiver
+    lateinit var messageDecryptor: MessageDecryptor
 
     private val stompService: StompService = StompService()
     private val gson: Gson = Gson()
@@ -64,7 +70,7 @@ class MessageSaverService : Service(){
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.d("MessageSaverService", "onStart called")
+        Log.d("SafeChat:MessageSaverService", "onStart called")
         serviceScope.launch{
             connectToUserQueue()
         }
@@ -75,23 +81,25 @@ class MessageSaverService : Service(){
     override fun onCreate() {
         instance = this
         super.onCreate()
-        Log.d("MessageSaverService", "onCreate called")
+        Log.d("SafeChat:MessageSaverService", "onCreate called")
     }
 
     override fun onDestroy() {
         instance = null
         super.onDestroy()
-        Log.d("MessageSaverService", "onDestroy called")
+        Log.d("SafeChat:MessageSaverService", "onDestroy called")
     }
 
     private suspend fun connectToUserQueue() {
 
-        val localUser = userRepository.getLocalUser()
+        val localUser: UserEntity
 
-        if(localUser == null) {
+        try {
+            localUser = userRepository.getLocalUser()
+        } catch (e: Exception) {
             Log.e(
-                "MessageSaverService",
-                "LocalUser is not created yet. Aborting MessageServiceCreation."
+                "SafeChat:MessageSaverService",
+                "Exception while trying to get local user. Aborting MessageServiceCreation."
             )
             return
         }
@@ -103,7 +111,7 @@ class MessageSaverService : Service(){
         stompService.connect()
         stompService.subscribeToTopic("/user/queue/${localUser.phoneNumber}") { message ->
 
-            Log.d("MessageSaverService","received a message $message")
+            Log.d("SafeChat:MessageSaverService","received a message $message")
 
             serviceScope.launch {
                 val outputEncryptedMessageDTO = gson.fromJson(message, OutputEncryptedMessageDTO::class.java)
@@ -121,13 +129,13 @@ class MessageSaverService : Service(){
 
                 if(decryptedMessage == null) {
                     Log.e(
-                        "MessageSaverService",
+                        "SafeChat:MessageSaverService",
                         "Failed to decrypt message from: ${it.from}"
                     )
                     return@withContext
                 } else{
                     Log.d(
-                        "MessageSaverService",
+                        "SafeChat:MessageSaverService",
                         "Successfully decrypted message from: ${it.from}" +
                                 " message: $decryptedMessage")
                 }
@@ -138,25 +146,47 @@ class MessageSaverService : Service(){
     }
 
     private suspend fun handleNewMessage(outputEncryptedMessageDTO: OutputEncryptedMessageDTO) {
-        val decryptedMessage = decryptMessage(outputEncryptedMessageDTO)
+        try {
+            val decryptedMessage = decryptMessage(outputEncryptedMessageDTO)
 
-        if(decryptedMessage == null) {
-            Log.e(
-                "MessageSaverService",
-                "Failed to decrypt message from: ${outputEncryptedMessageDTO.from}"
+            if(decryptedMessage == null) {
+                Log.e(
+                    "SafeChat:MessageSaverService",
+                    "Failed to decrypt message from: ${outputEncryptedMessageDTO.from}"
+                )
+
+                return
+            } else{
+                Log.d(
+                    "SafeChat:MessageSaverService",
+                    "Successfully decrypted message from: ${outputEncryptedMessageDTO.from}" +
+                            " message: $decryptedMessage")
+            }
+
+            messageListener?.onNewMessage(decryptedMessage)
+
+            saveNewMessage(decryptedMessage)
+        } catch (e: Exception) {
+            Log.e("SafeChat:MessageSaverService", "Exception thrown while handling new message: ${e.message}")
+        } finally {
+
+            val nonce =  AuthMessageHelper.generateNonce()
+            val instant = Instant.now().epochSecond.toString()
+            val privateKeyBytes = Decoder.decode(userRepository.getLocalUser().privateIdentityKey)
+            val dataToSign = nonce.plus(Decoder.decode(instant))
+            val signature = AuthMessageHelper.generateSignature(
+                privateKeyBytes,
+                dataToSign
             )
-            return
-        } else{
-            Log.d(
-                "MessageSaverService",
-                "Successfully decrypted message from: ${outputEncryptedMessageDTO.from}" +
-                        " message: $decryptedMessage")
+
+            acknowledgeMessage(MessageAcknowledgementDTO(
+                outputEncryptedMessageDTO.id,
+                nonceTimestamp = instant.toLong(),
+                phoneNumber = userRepository.getLocalUser().phoneNumber,
+                nonce = nonce,
+                authMessageSignature = signature
+            ))
         }
-
-        messageListener?.onNewMessage(decryptedMessage)
-
-        saveNewMessage(decryptedMessage)
-        acknowledgeMessage(MessageAcknowledgementDTO(outputEncryptedMessageDTO.id))
     }
 
     private suspend fun createNewContact(decryptedMessage: MessageEntity) {
@@ -166,7 +196,7 @@ class MessageSaverService : Service(){
 
         if(userDTO == null) {
             Log.e(
-                "MessageSaverService",
+                "SafeChat:MessageSaverService",
                 "Contact for phone: ${decryptedMessage.senderPhoneNumber} not found."
             )
             return
@@ -183,30 +213,32 @@ class MessageSaverService : Service(){
         contactListener?.onNewContact(newContact)
 
         Log.d(
-            "MessageSaverService",
+            "SafeChat:MessageSaverService",
             "New contact created: $newContact"
         )
     }
 
     private suspend fun decryptMessage(outputEncryptedMessageDTO: OutputEncryptedMessageDTO): MessageEntity? {
 
-        val decryptedMessage = encryptedMessageReceiver.decryptMessage(outputEncryptedMessageDTO)
+        val decryptedMessage = messageDecryptor.decryptMessage(outputEncryptedMessageDTO)
 
         if(decryptedMessage == null) {
             Log.e(
-                "MessageSaverService",
+                "SafeChat:MessageSaverService",
                 "Failed to decrypt message from: ${outputEncryptedMessageDTO.from}"
             )
             return null
         } else{
             Log.d(
-                "MessageSaverService",
+                "SafeChat:MessageSaverService",
                 "Successfully decrypted message from: ${outputEncryptedMessageDTO.from}" +
                         " message: $decryptedMessage")
         }
 
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS")
         val timestamp = dateFormat.parse(outputEncryptedMessageDTO.date)
+
+        Log.d("SafeChat:MessageSaverService", "Timestamp: $timestamp for message: $decryptedMessage")
 
         return MessageEntity(
             senderPhoneNumber = outputEncryptedMessageDTO.from,
@@ -225,7 +257,7 @@ class MessageSaverService : Service(){
         }
 
         Log.d(
-            "MessageSaverService",
+            "SafeChat:MessageSaverService",
             "Received new message from: ${decryptedMessage.senderPhoneNumber}" +
                     " message: ${decryptedMessage.content}")
 
@@ -259,12 +291,12 @@ class MessageSaverService : Service(){
             try {
                 val response : Response<Void> = chatWebService.acknowledge(messageAcknowledgementDTO).execute()
                 if(response.isSuccessful) {
-                    Log.d("MessageSaverService", "Successfully to send message receive acknowledgement.")
+                    Log.d("SafeChat:MessageSaverService", "Successfully send message receive acknowledgement.")
                 } else {
-                    Log.e("MessageSaverService", "Failed to send message receive acknowledgement.")
+                    Log.e("SafeChat:MessageSaverService", "Failed to send message receive acknowledgement.")
                 }
             } catch (e: Exception) {
-                Log.e("MessageSaverService",
+                Log.e("SafeChat:MessageSaverService",
                     "Exception while trying to send message receive acknowledgement.")
             }
         }
@@ -275,17 +307,33 @@ class MessageSaverService : Service(){
             val chatWebService = retrofit.create(ChatWebService::class.java)
 
             try {
+
+                val nonce =  AuthMessageHelper.generateNonce()
+                val instant = Instant.now().epochSecond.toString()
+                val privateKeyBytes = Decoder.decode(userRepository.getLocalUser().privateIdentityKey)
+                val dataToSign = nonce.plus(Decoder.decode(instant))
+                val signature = AuthMessageHelper.generateSignature(
+                    privateKeyBytes,
+                    dataToSign
+                )
+                val getMessagesDTO = GetMessagesDTO(
+                    phoneNumber = localUserPhoneNumber,
+                    nonce = nonce,
+                    nonceTimestamp = instant.toLong(),
+                    authMessageSignature = signature
+                )
+
                 val response : Response<List<OutputEncryptedMessageDTO>> =
-                    chatWebService.getNewMessages(localUserPhoneNumber).execute()
+                    chatWebService.getNewMessages(getMessagesDTO).execute()
                 if(response.isSuccessful) {
-                    Log.d("MessageSaverService", "Successfully fetched new messages.")
+                    Log.d("SafeChat:MessageSaverService", "Successfully fetched new messages. Response: ${response.body()}")
                     response.body()
                 } else {
-                    Log.e("MessageSaverService", "Failed to fetch new messages.")
+                    Log.e("SafeChat:MessageSaverService", "Failed to fetch new messages.")
                     null
                 }
             } catch (e: Exception) {
-                Log.e("MessageSaverService",
+                Log.e("SafeChat:MessageSaverService",
                     "Exception while trying to fetch new messages. ${e.message}")
                 null
             }

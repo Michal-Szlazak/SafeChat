@@ -1,17 +1,22 @@
 package com.szlazakm.chatserver.dtos;
 
-import lombok.Builder;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.Value;
+import lombok.experimental.SuperBuilder;
 import lombok.extern.jackson.Jacksonized;
 
 @Value
-@Builder
+@SuperBuilder
 @Jacksonized
 public class UserCreateDTO {
 
+    @NotBlank
+    @Pattern(regexp = "^[a-zA-Z]")
     String firstName;
     String lastName;
-    String phoneNumber;
     String identityKey;
     String pin;
+    String phoneNumber;
+
 }

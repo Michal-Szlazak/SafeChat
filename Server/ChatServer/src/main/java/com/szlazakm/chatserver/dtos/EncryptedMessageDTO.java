@@ -1,15 +1,15 @@
 package com.szlazakm.chatserver.dtos;
 
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import lombok.extern.jackson.Jacksonized;
 
+import java.time.Instant;
 import java.util.UUID;
 
-@Builder
+@SuperBuilder
 @Jacksonized
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 @ToString
 public class EncryptedMessageDTO {
     boolean initial;
@@ -21,4 +21,11 @@ public class EncryptedMessageDTO {
     String aliceEphemeralPublicKey;
     Integer bobOpkId;
     Integer bobSpkId;
+    String ephemeralRatchetKey;
+    int messageIndex;
+    int lastMessageBatchSize;
+    String phoneNumber;
+    Long nonceTimestamp;
+    byte[] nonce;
+    byte[] authMessageSignature;
 }

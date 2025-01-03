@@ -43,7 +43,7 @@ public class OPKService {
         userRepository.save(user);
     }
 
-    public List<Integer> getOPKS(String phoneNumber) {
+    public List<Integer> getOPKsIds(String phoneNumber) {
 
         Optional<User> optionalUser = userRepository.findByPhoneNumber(phoneNumber);
         User user = optionalUser.orElseThrow(() -> new UserNotFoundException(

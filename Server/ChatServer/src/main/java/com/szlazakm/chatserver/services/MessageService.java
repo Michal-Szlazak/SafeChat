@@ -1,7 +1,7 @@
 package com.szlazakm.chatserver.services;
 
 import com.szlazakm.chatserver.dtos.MessageAcknowledgementDTO;
-import com.szlazakm.chatserver.dtos.OutputEncryptedMessageDTO;
+import com.szlazakm.chatserver.dtos.response.OutputEncryptedMessageDTO;
 import com.szlazakm.chatserver.entities.Message;
 import com.szlazakm.chatserver.repositories.MessageRepository;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
+
+import static java.util.stream.Collectors.toList;
 
 @Service
 @RequiredArgsConstructor
@@ -35,19 +37,22 @@ public class MessageService {
                 message -> messageRepository.deleteById(message.getMessageId())
         );
 
-        return newMessages.stream().map(
-                message -> new OutputEncryptedMessageDTO(
-                        message.getMessageId(),
-                        message.isInitial(),
-                        message.getFromPhoneNumber(),
-                        message.getToPhoneNumber(),
-                        message.getCipher(),
-                        null,
-                        null,
-                        null,
-                        null,
-                        message.getTimestamp()
-                )
+        return (List<OutputEncryptedMessageDTO>) newMessages.stream().map(
+                message -> OutputEncryptedMessageDTO.builder()
+                        .id(message.getMessageId())
+                        .initial(message.isInitial())
+                        .from(message.getFromPhoneNumber())
+                        .to(message.getToPhoneNumber())
+                        .cipher(message.getCipher())
+                        .aliceIdentityPublicKey(message.getAliceIdentityPublicKey())
+                        .aliceEphemeralPublicKey(message.getAliceEphemeralPublicKey())
+                        .bobOpkId(message.getBobOpkId())
+                        .bobSpkId(message.getBobSpkId())
+                        .date(message.getTimestamp())
+                        .ephemeralRatchetKey(message.getEphemeralRatchetKey())
+                        .messageIndex(message.getMessageIndex())
+                        .lastMessageBatchSize(message.getLastMessageBatchSize())
+                        .build()
         ).toList();
     }
 }

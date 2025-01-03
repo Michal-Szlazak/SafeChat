@@ -1,5 +1,7 @@
 package com.szlazakm.safechat.webclient.dtos
 
+import java.time.Instant
+
 data class EncryptedMessageDTO (
     val initial: Boolean,
     val from: String,
@@ -8,5 +10,13 @@ data class EncryptedMessageDTO (
     val aliceIdentityPublicKey: String?,
     val aliceEphemeralPublicKey: String?,
     val bobOpkId: Int?,
-    val bobSpkId: Int?
+    val bobSpkId: Int?,
+    val ephemeralRatchetKey: String,
+    val messageIndex: Int,
+    val lastMessageBatchSize: Int,
+
+    val phoneNumber: String,
+    val nonceTimestamp: Long,
+    val nonce: ByteArray,
+    val authMessageSignature: ByteArray
 )

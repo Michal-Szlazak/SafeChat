@@ -12,5 +12,11 @@ data class SPKCreateDTO (
     @JsonProperty("signature")
     val signature: String,
     @JsonProperty("timestamp")
-    val timestamp: Long
+    val timestamp: Long,
+    @JsonProperty("nonceTimestamp")
+    val nonceTimestamp: Long,
+    @JsonProperty("nonce")
+    val nonce: ByteArray,
+    @JsonProperty("authMessageSignature")
+    val authMessageSignature: ByteArray
 )

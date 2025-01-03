@@ -16,7 +16,10 @@ import com.szlazakm.safechat.client.presentation.states.ChatState
 import com.szlazakm.safechat.webclient.dtos.MessageDTO
 import com.szlazakm.safechat.webclient.dtos.MessageSentResponseDTO
 import com.szlazakm.safechat.webclient.webservices.ChatWebService
-import com.szlazakm.safechat.utils.auth.EncryptedMessageSender
+import com.szlazakm.safechat.utils.auth.MessageEncryptor
+import com.szlazakm.safechat.utils.auth.ecc.AuthMessageHelper
+import com.szlazakm.safechat.utils.auth.utils.Decoder
+import com.szlazakm.safechat.utils.auth.utils.Encoder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,6 +29,7 @@ import kotlinx.coroutines.withContext
 import retrofit2.Response
 import retrofit2.Retrofit
 import java.text.SimpleDateFormat
+import java.time.Instant
 import javax.inject.Inject
 
 @HiltViewModel
@@ -34,7 +38,7 @@ class ChatViewModel @Inject constructor(
     private val contactRepository: ContactRepository,
     private val userRepository: UserRepository,
     private val retrofit: Retrofit,
-    private val encryptedMessageSender: EncryptedMessageSender
+    private val messageEncryptor: MessageEncryptor
 ): ViewModel(), MessageListener {
 
     private val chatState: MutableStateFlow<ChatState> = MutableStateFlow(ChatState())
@@ -47,6 +51,8 @@ class ChatViewModel @Inject constructor(
     }
 
     fun loadChat() {
+
+        Log.i("ChatViewModel", "Loading chat with contact: ${chatState.value.selectedContact}")
 
         val messageSaverService = MessageSaverService.getInstance()
         messageSaverService?.setMessageListener(this)
@@ -69,6 +75,11 @@ class ChatViewModel @Inject constructor(
 
                 val from = localUserEntity.phoneNumber
                 val to = chatState.value.selectedContact?.phoneNumber ?: return@withContext emptyList<Message.TextMessage>()
+
+                for(message in messageRepository.getMessages(from, to)) {
+                    Log.d("ChatViewModel", "Message: $message")
+                }
+
                 messageRepository.getMessages(
                     from,
                     to
@@ -82,9 +93,6 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    fun getContact(phoneNumber: String) : Contact? {
-        return contactRepository.getContact(phoneNumber)
-    }
 
     fun onEvent(event: ChatEvent) {
         when (event) {
@@ -113,15 +121,40 @@ class ChatViewModel @Inject constructor(
                         return@launch
                     }
 
-                    val messageDTO = MessageDTO(
-                        from = localUser.phoneNumber,
-                        to = selectedContact,
-                        text = event.message
-                    )
-
                     withContext(Dispatchers.IO) {
+
+                        val nonce =  AuthMessageHelper.generateNonce()
+                        val instant = Instant.now().epochSecond.toString()
+                        val privateKeyBytes = Decoder.decode(userRepository.getLocalUser().privateIdentityKey)
+                        val dataToSign = nonce.plus(Decoder.decode(instant))
+                        val signature = AuthMessageHelper.generateSignature(
+                            privateKeyBytes,
+                            dataToSign
+                        )
+
+                        val messageDTO = MessageDTO(
+                            from = localUser.phoneNumber,
+                            to = selectedContact,
+                            text = event.message,
+                            nonce = nonce,
+                            nonceTimestamp = instant.toLong(),
+                            authMessageSignature = signature,
+                            phoneNumber = localUser.phoneNumber
+                        )
+
                         try {
-                            val encryptedMessage = encryptedMessageSender.encryptMessage(messageDTO)
+                            val encryptedMessage = messageEncryptor.encryptMessage(messageDTO)
+                            Log.d("ChatViewModel", "Encrypted message: $encryptedMessage")
+
+                            Log.d("ChatViewModel", "from: ${encryptedMessage?.from}")
+                            Log.d("ChatViewModel", "to: ${encryptedMessage?.to}")
+                            Log.d("ChatViewModel", "cipher: ${encryptedMessage?.cipher}")
+                            Log.d("ChatViewModel", "ephemeralRatchetKey: ${encryptedMessage?.ephemeralRatchetKey}")
+                            Log.d("ChatViewModel", "phone number: ${encryptedMessage?.phoneNumber}")
+                            Log.d("ChatViewModel", "nonce: ${Encoder.encode(encryptedMessage!!.nonce)}")
+                            Log.d("ChatViewModel", "nonceTimestamp: ${encryptedMessage?.nonceTimestamp}")
+                            Log.d("ChatViewModel", "authMessageSignature: ${Encoder.encode(encryptedMessage!!.authMessageSignature)}")
+
                             if(encryptedMessage == null) {
                                 Log.e("ChatViewModel", "EncryptedMessage is null. Sending aborted")
                                 return@withContext
@@ -161,10 +194,10 @@ class ChatViewModel @Inject constructor(
 
                                 chatState.value = state.value.copy(messages = updatedMessages)
                             } else {
-                                println("Failed send message. Response code: ${response.code()}")
+                                Log.e("ChatViewModel", "Failed send message. Response code: ${response.code()}")
                             }
                         } catch (e: Exception) {
-                            println("Failed to send message: ${e.message}")
+                            Log.e("ChatViewModel", "Failed to send message ex: ${e.message}")
                         }
                     }
 
