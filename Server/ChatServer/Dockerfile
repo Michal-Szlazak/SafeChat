@@ -1,7 +1,17 @@
+FROM openjdk:21 AS builder
+WORKDIR /my-project
+
+COPY gradle/ gradle/
+COPY gradlew .
+COPY build.gradle .
+COPY settings.gradle .
+
+RUN ./gradlew clean bootJar
+
+
 FROM openjdk:21
 WORKDIR /my-project
-CMD ["./gradlew", "clean", "bootJar"]
-COPY Server/ChatServer/build/libs/*.jar app.jar
+COPY build/libs/*.jar app.jar
 
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
