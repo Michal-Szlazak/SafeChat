@@ -10,13 +10,30 @@ spring:
   mvc:
     log-request-details: true # for debugging
 
+#  datasource:
+#    url: jdbc:postgresql://${SAFECHAT_DB_ADDRESS}/safechat-db
+#    username: ${SAFECHAT_DB_USERNAME}
+#    password: ${SAFECHAT_DB_PASS}
+#    driver-class-name: org.postgresql.Driver
+#  jpa:
+#    hibernate:
+#      ddl-auto: update
+#    show-sql: true
+#    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
   datasource:
-    url: jdbc:postgresql://${SAFECHAT_DB_ADDRESS}/safechat-db
-    username: ${SAFECHAT_DB_USERNAME}
-    password: ${SAFECHAT_DB_PASS}
-    driver-class-name: org.postgresql.Driver
+    url: jdbc:h2:mem:db
+    username: sa
+    password: sa
+    driverClassName: org.h2.Driver
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
   jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    database-platform: org.hibernate.dialect.H2Dialect
+    properties:
+      hibernate:
+        format_sql: true
