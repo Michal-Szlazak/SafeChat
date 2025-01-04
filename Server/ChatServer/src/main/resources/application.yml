@@ -13,7 +13,7 @@ spring:
   datasource:
     url: jdbc:postgresql://${SAFECHAT_DB_ADDRESS}/safechat-db
     username: ${SAFECHAT_DB_USERNAME}
-    password: ${SAFECHAT_DB_PASSWORD}
+    password: ${SAFECHAT_DB_PASS}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
