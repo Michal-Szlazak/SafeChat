@@ -7,6 +7,7 @@ import com.szlazakm.chatserver.entities.OPK;
 import com.szlazakm.chatserver.entities.SPK;
 import com.szlazakm.chatserver.entities.User;
 import com.szlazakm.chatserver.exceptionHandling.exceptions.SPKNotFoundException;
+import com.szlazakm.chatserver.exceptionHandling.exceptions.UserAlreadyExistsException;
 import com.szlazakm.chatserver.exceptionHandling.exceptions.UserNotFoundException;
 import com.szlazakm.chatserver.repositories.SPKRepository;
 import com.szlazakm.chatserver.repositories.UserRepository;
@@ -28,6 +29,12 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
 
     public UUID createUser(UserCreateDTO userCreateDTO) {
+
+        Optional<User> optUser = userRepository.findByPhoneNumber(userCreateDTO.getPhoneNumber());
+
+        if(optUser.isPresent()) {
+            throw new UserAlreadyExistsException();
+        }
 
         String encodedPin = passwordEncoder.encode(userCreateDTO.getPin());
 

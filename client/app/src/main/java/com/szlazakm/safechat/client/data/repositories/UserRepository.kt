@@ -22,6 +22,10 @@ class UserRepository @Inject constructor(context: Context) {
         database.userDao().insertUser(userEntity)
     }
 
+    fun deleteUser() {
+        database.userDao().clearUserDB()
+    }
+
     @Throws(LocalUserNotFoundException::class)
     fun getLocalUser(): UserEntity {
 

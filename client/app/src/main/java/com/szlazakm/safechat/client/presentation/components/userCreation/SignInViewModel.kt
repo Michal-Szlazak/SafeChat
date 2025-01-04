@@ -22,7 +22,9 @@ import com.szlazakm.safechat.webclient.dtos.VerifyPhoneNumberDTO
 import com.szlazakm.safechat.webclient.webservices.UserWebService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.invoke
 import kotlinx.coroutines.launch
@@ -45,6 +47,9 @@ class SignInViewModel @Inject constructor(
     private val _state: MutableStateFlow<SignInState> = MutableStateFlow(SignInState())
     val state = _state.asStateFlow()
 
+    private val _errorMessage = MutableSharedFlow<String>() // For one-time error messages
+    val errorMessage: SharedFlow<String> = _errorMessage
+
     suspend fun loadLocalUserData() {
         return (Dispatchers.IO) {
             try {
@@ -63,13 +68,24 @@ class SignInViewModel @Inject constructor(
                 val response = userWebService.verifyPhoneNumber(verifyPhoneNumberDTO).execute()
                 if(response.isSuccessful) {
                     Log.d("SignInViewModel", "Response successful. Body: ${response.body()}")
-                    response.body()?: false
+                    true
                 } else {
                     Log.e("SignInViewModel", "Response unsuccessful. Code: ${response.code()}")
-                    response.body()?: false
+                    deleteLocalUserData()
+
+
+                    viewModelScope.launch {
+                        _errorMessage.emit(response.message() ?: "Unknown error occurred")
+                    }
+                    false
                 }
             } catch (e: Exception) {
                 Log.e("SignInViewModel", "Error while trying to verify phone number: ${e.message}")
+                deleteLocalUserData()
+
+                viewModelScope.launch {
+                    _errorMessage.emit(e.message ?: "Unknown error occurred")
+                }
                 false
             }
         }
@@ -176,6 +192,14 @@ class SignInViewModel @Inject constructor(
         _state.value = _state.value.copy(
             phoneNumber = phoneNumber
         )
+    }
+
+    private fun deleteLocalUserData() {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                userRepository.deleteUser()
+            }
+        }
     }
 
     private fun encode(bytes: ByteArray): String {
