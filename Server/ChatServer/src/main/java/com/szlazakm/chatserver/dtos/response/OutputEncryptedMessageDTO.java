@@ -8,10 +8,20 @@ import lombok.experimental.SuperBuilder;
 
 import java.util.UUID;
 
-@EqualsAndHashCode(callSuper = true)
 @Value
-@SuperBuilder
-public class OutputEncryptedMessageDTO extends EncryptedMessageDTO {
-
+@Builder
+public class OutputEncryptedMessageDTO {
+    boolean initial;
+    UUID id;
+    String from;
+    String to;
+    String cipher;
+    String aliceIdentityPublicKey;
+    String aliceEphemeralPublicKey;
+    Integer bobOpkId;
+    Integer bobSpkId;
+    String ephemeralRatchetKey;
+    int messageIndex;
+    int lastMessageBatchSize;
     String date;
 }

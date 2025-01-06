@@ -10,7 +10,6 @@ import com.szlazakm.chatserver.exceptionHandling.exceptions.UnverifiedUserExcept
 import com.szlazakm.chatserver.services.MessageService;
 import com.szlazakm.chatserver.services.NonceService;
 import com.szlazakm.chatserver.utils.AuthHelper;
-import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
