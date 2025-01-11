@@ -21,3 +21,8 @@ spring:
 
     hibernate:
       ddl-auto: create-drop
+
+logging:
+  level:
+    org.springframework: INFO
+

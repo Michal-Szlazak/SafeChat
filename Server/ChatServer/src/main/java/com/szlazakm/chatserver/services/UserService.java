@@ -60,6 +60,7 @@ public class UserService {
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .phoneNumber(user.getPhoneNumber())
+                .identityKey(user.getIdentityKey())
                 .build();
     }
 

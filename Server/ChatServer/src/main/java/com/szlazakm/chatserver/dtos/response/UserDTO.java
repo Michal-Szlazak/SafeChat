@@ -12,4 +12,5 @@ public class UserDTO {
     String firstName;
     String lastName;
     String phoneNumber;
+    String identityKey;
 }
