@@ -31,6 +31,8 @@ import com.szlazakm.safechat.utils.auth.utils.PaddingHandler
 import com.szlazakm.safechat.webclient.dtos.OutputEncryptedMessageDTO
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.invoke
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.nio.charset.StandardCharsets
 import javax.crypto.Cipher
@@ -52,55 +54,65 @@ class MessageDecryptor @Inject constructor(
     private val ephemeralRatchetKeyPairRepository: EphemeralRatchetKeyPairRepository
 ) {
 
+    private val mutex = Mutex()
+
     suspend fun decryptMessage(encryptedMessage: OutputEncryptedMessageDTO): String? {
 
-        val senderPhoneNumber = encryptedMessage.from
-        var encryptionSession =
-            rootKeyRepository.getEncryptionSession(senderPhoneNumber)
+        mutex.withLock {
 
-        if (encryptedMessage.initial) {
+            val senderPhoneNumber = encryptedMessage.from
+            var encryptionSession =
+                rootKeyRepository.getEncryptionSession(senderPhoneNumber)
 
-            val initialMessageEncryptionBundle =
-                bobDecryptionSessionInitializer.getInitialMessageEncryptionBundle(encryptedMessage)
+            if (encryptedMessage.initial) {
 
-            if (initialMessageEncryptionBundle == null) {
-                Log.e("SafeChat:MessageDecryptor", "Failed to create shared secret.")
+                val initialMessageEncryptionBundle =
+                    bobDecryptionSessionInitializer.getInitialMessageEncryptionBundle(
+                        encryptedMessage
+                    )
+
+                if (initialMessageEncryptionBundle == null) {
+                    Log.e("SafeChat:MessageDecryptor", "Failed to create shared secret.")
+                    return null
+                }
+
+                Log.d(
+                    "SafeChat:MessageDecryptor",
+                    "created receiver chain key: ${initialMessageEncryptionBundle.receiverChainKey.key.toHex()}"
+                )
+
+                encryptionSession = createNewSession(
+                    phoneNumber = senderPhoneNumber,
+                    initialMessageDecryptionBundle = initialMessageEncryptionBundle
+                )
+            }
+
+            val ourIdentityPublicKey = userRepository.getLocalUser().publicIdentityKey
+
+            if (encryptionSession == null) {
+                Log.e("SafeChat:MessageDecryptor", "Encryption session not found.")
                 return null
             }
 
-            Log.d("SafeChat:MessageDecryptor", "created receiver chain key: ${initialMessageEncryptionBundle.receiverChainKey.key.toHex()}")
+            Log.d("SafeChat:MessageDecryptor", "Encryption session is not null $encryptionSession")
 
-            encryptionSession = createNewSession(
-                phoneNumber = senderPhoneNumber,
-                initialMessageDecryptionBundle = initialMessageEncryptionBundle
+            val chainKey = getOrCreateChainKey(
+                encryptionSession,
+                Decoder.decode(encryptedMessage.ephemeralRatchetKey)
             )
+
+            Log.d("SafeChat:MessageDecryptor", "Receiver chain key: ${chainKey.key.toHex()}")
+
+            val decryptedBytes = decryptMessage(
+                session = encryptionSession,
+                chainKey = chainKey,
+                theirIdentityKey = encryptionSession.identityKeyEntity.publicKey,
+                ourIdentityKey = Decoder.decode(ourIdentityPublicKey),
+                encryptedMessageDto = encryptedMessage
+            )
+
+            return String(decryptedBytes, StandardCharsets.UTF_8)
         }
-
-        val ourIdentityPublicKey = userRepository.getLocalUser().publicIdentityKey
-
-        if (encryptionSession == null) {
-            Log.e("SafeChat:MessageDecryptor", "Encryption session not found.")
-            return null
-        }
-
-        Log.d("SafeChat:MessageDecryptor", "Encryption session is not null $encryptionSession")
-
-        val chainKey = getOrCreateChainKey(
-            encryptionSession,
-            Decoder.decode(encryptedMessage.ephemeralRatchetKey)
-        )
-
-        Log.d("SafeChat:MessageDecryptor", "Receiver chain key: ${chainKey.key.toHex()}")
-
-        val decryptedBytes  = decryptMessage(
-            session = encryptionSession,
-            chainKey = chainKey,
-            theirIdentityKey = encryptionSession.identityKeyEntity.publicKey,
-            ourIdentityKey = Decoder.decode(ourIdentityPublicKey),
-            encryptedMessageDto = encryptedMessage
-        )
-
-        return String(decryptedBytes, StandardCharsets.UTF_8)
     }
 
     private suspend fun getOrCreateChainKey(session: EncryptionSession, ephemeralRatchetKey: ByteArray): ReceiverChainKey {

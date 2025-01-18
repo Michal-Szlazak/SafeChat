@@ -6,6 +6,7 @@ import com.szlazakm.safechat.client.data.repositories.PreKeyRepository
 import com.szlazakm.safechat.utils.auth.ecc.EccOpk
 import com.szlazakm.safechat.utils.auth.ecc.EccSignedKeyPair
 import java.util.Base64
+import java.util.stream.Collectors
 
 class PreKeyService(
     private val preKeyRepository: PreKeyRepository
@@ -18,7 +19,7 @@ class PreKeyService(
             opk -> opk.id
         }
 
-        val usedOPKIds = storedOPKIds.filter{ !unusedOPKIds.contains(it) }.toList()
+        val usedOPKIds = storedOPKIds.filter{ !unusedOPKIds.contains(it) }.collect(Collectors.toList())
         preKeyRepository.deleteOPKsByIds(usedOPKIds)
     }
 
@@ -38,8 +39,6 @@ class PreKeyService(
         val opkEntities = newOpks.map { opk ->
             OPKEntity(
                 id = opk.id,
-//                publicOPK = encode((opk.keyPair.publicKey as DjbECPublicKey).publicKey),
-//                privateOPK = encode((opk.keyPair.privateKey as DjbECPrivateKey).privateKey)
                 publicOPK = encode(opk.publicKey),
                 privateOPK = encode(opk.privateKey)
             )

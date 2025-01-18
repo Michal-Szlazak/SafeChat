@@ -1,5 +1,6 @@
 package com.szlazakm.safechat.modules
 
+import com.szlazakm.safechat.client.data.repositories.ContactRepository
 import com.szlazakm.safechat.client.data.repositories.EphemeralRatchetKeyPairRepository
 import com.szlazakm.safechat.client.data.repositories.IdentityKeyRepository
 import com.szlazakm.safechat.client.data.repositories.MessageKeysRepository
@@ -56,7 +57,8 @@ class AuthModule {
         rootKeyRepository: RootKeyRepository,
         senderChainKeyRepository: SenderChainKeyRepository,
         ephemeralRatchetKeyPairRepository: EphemeralRatchetKeyPairRepository,
-        identityKeyRepository: IdentityKeyRepository
+        identityKeyRepository: IdentityKeyRepository,
+        contactRepository: ContactRepository
     ): MessageEncryptor {
         return MessageEncryptor(
             userRepository,
@@ -64,7 +66,8 @@ class AuthModule {
             rootKeyRepository,
             senderChainKeyRepository,
             ephemeralRatchetKeyPairRepository,
-            identityKeyRepository
+            identityKeyRepository,
+            contactRepository
         )
     }
 

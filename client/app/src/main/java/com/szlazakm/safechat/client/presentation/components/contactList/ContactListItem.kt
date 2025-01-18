@@ -15,10 +15,10 @@ import com.szlazakm.safechat.client.domain.LocalUserData
 @Composable
 fun ContactListItem(
     contact: Contact,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    localUserPhoneNumber: String
 ) {
 
-    val localUserPhoneNumber = LocalUserData.getInstance().getPhoneNumber()
     val text = if (contact.phoneNumber == localUserPhoneNumber) {
         "${contact.firstName} ${contact.lastName} (You)"
     } else {

@@ -109,76 +109,65 @@ class SignInViewModel @Inject constructor(
         }
     }
 
-    fun saveUser(
-        navController: NavController,
-        successDestination: UserCreationScreenRoutes,
-        failureDestination: UserCreationScreenRoutes
-    ) {
+    suspend fun saveUser(): Pair<Boolean, String> {
 
         val keyPair = preKeyManager.generateIdentityKeys()
 
-        viewModelScope.launch {
+        try {
 
-            try {
+            val response = withContext(Dispatchers.IO) {
 
-                val response = withContext(Dispatchers.IO) {
+                val userCreateDTO = UserCreateDTO(
+                    firstName = state.value.firstName,
+                    lastName = state.value.lastName,
+                    phoneNumber = state.value.phoneNumber,
+                    identityKey = encode(keyPair.publicKey),
+                    pin = state.value.pin
+                )
 
-                    val userCreateDTO = UserCreateDTO(
-                        firstName = state.value.firstName,
-                        lastName = state.value.lastName,
-                        phoneNumber = state.value.phoneNumber,
-                        identityKey = encode(keyPair.publicKey),
-                        pin = state.value.pin
-                    )
-
-                    userWebService.createUser(userCreateDTO).execute()
-                }
-                if (response.isSuccessful) {
-                    Log.d("SignInViewModel", "User created successfully.")
-
-                    val user = UserEntity(
-                        phoneNumber = state.value.phoneNumber,
-                        firstName = state.value.firstName,
-                        lastName = state.value.lastName,
-                        createdAt = Date(),
-                        publicIdentityKey = encode(keyPair.publicKey),
-                        privateIdentityKey = encode(keyPair.privateKey)
-                    )
-
-                    LocalUserData.getInstance().setUserData(user)
-
-                    val localUserContact = Contact(
-                        phoneNumber = state.value.phoneNumber,
-                        firstName = state.value.firstName,
-                        lastName = state.value.lastName,
-                        photo = null
-                    )
-
-                    withContext(Dispatchers.IO) {
-                        userRepository.createUser(user)
-                        contactRepository.createContact(localUserContact)
-//                        preKeyManager.setSignedPreKey()
-//                        preKeyManager.checkAndProvideOPK()
-                        loadMessageSaverService()
-                        loadLocalUserData()
-                    }
-
-                    navController.navigate(successDestination.route)
-
-                } else {
-                    Log.e("SignInViewModel", "Failed to create user: ${response.code()}, message: ${response.raw()}")
-                    navController.navigate(failureDestination.route)
-                }
-            } catch (e: Exception) {
-                Log.e("SignInViewModel", "Error while trying to create user: ${e.message}")
-                navController.navigate(failureDestination.route)
+                userWebService.createUser(userCreateDTO).execute()
             }
+            if (response.isSuccessful) {
+                Log.d("SignInViewModel", "User created successfully.")
 
+                val user = UserEntity(
+                    phoneNumber = state.value.phoneNumber,
+                    firstName = state.value.firstName,
+                    lastName = state.value.lastName,
+                    createdAt = Date(),
+                    publicIdentityKey = encode(keyPair.publicKey),
+                    privateIdentityKey = encode(keyPair.privateKey)
+                )
+
+                LocalUserData.getInstance().setUserData(user)
+
+                val localUserContact = Contact(
+                    phoneNumber = state.value.phoneNumber,
+                    firstName = state.value.firstName,
+                    lastName = state.value.lastName,
+                    photo = null,
+                    securityCode = "Not needed for local user"
+                )
+
+                withContext(Dispatchers.IO) {
+                    userRepository.createUser(user)
+                    contactRepository.createContact(localUserContact)
+                    loadMessageSaverService()
+                    loadLocalUserData()
+                }
+
+                return Pair(true, "User created successfully")
+            } else {
+                return Pair(false, response.errorBody()?.string() ?: "Unknown error occurred")
+            }
+        } catch (e: Exception) {
+            Log.e("SignInViewModel", "Error while trying to create user: ${e.message}")
+            return Pair(false, e.message ?: "Unknown error occurred")
         }
     }
 
     private fun loadMessageSaverService() {
-        messageSaverManager.startMessageSaverService("SignInViewModel")
+        messageSaverManager.startServices("SignInViewModel")
     }
 
     fun savePin(pin: String) {

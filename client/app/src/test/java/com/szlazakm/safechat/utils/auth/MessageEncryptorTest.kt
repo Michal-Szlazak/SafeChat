@@ -1,7 +1,10 @@
 package com.szlazakm.safechat.utils.auth
 
+import android.util.Log
+import com.szlazakm.safechat.client.data.entities.EncryptionSession
 import com.szlazakm.safechat.client.data.entities.EphemeralRatchetEccKeyPairEntity
 import com.szlazakm.safechat.client.data.entities.UserEntity
+import com.szlazakm.safechat.client.data.repositories.ContactRepository
 import com.szlazakm.safechat.client.data.repositories.EphemeralRatchetKeyPairRepository
 import com.szlazakm.safechat.client.data.repositories.IdentityKeyRepository
 import com.szlazakm.safechat.client.data.repositories.MessageKeysRepository
@@ -13,6 +16,8 @@ import com.szlazakm.safechat.utils.auth.alice.AliceEncryptionSessionInitializer
 import com.szlazakm.safechat.utils.auth.alice.InitialMessageEncryptionBundle
 import com.szlazakm.safechat.utils.auth.bob.BobDecryptionSessionInitializer
 import com.szlazakm.safechat.utils.auth.bob.InitialMessageDecryptionBundle
+import com.szlazakm.safechat.utils.auth.ecc.AuthMessageHelper
+import com.szlazakm.safechat.utils.auth.ecc.EccKeyHelper
 import com.szlazakm.safechat.utils.auth.helpers.EncryptionSessionCreator
 import com.szlazakm.safechat.utils.auth.utils.Encoder
 import com.szlazakm.safechat.webclient.dtos.MessageDTO
@@ -35,8 +40,6 @@ import java.util.UUID
 @RunWith(RobolectricTestRunner::class)
 class MessageEncryptorTest {
 
-    /*
-
     @Mock
     private lateinit var aliceEncryptionSessionInitializer: AliceEncryptionSessionInitializer
     @Mock
@@ -58,6 +61,8 @@ class MessageEncryptorTest {
     private lateinit var receiverChainKeyRepository: ReceiverChainKeyRepository
     @Mock
     private lateinit var messageKeysRepository: MessageKeysRepository
+    @Mock
+    private lateinit var contactRepository: ContactRepository
 
     private lateinit var messageDecryptor: MessageDecryptor
 
@@ -74,7 +79,8 @@ class MessageEncryptorTest {
             rootKeyRepository,
             senderChainKeyRepository,
             ephemeralRatchetKeyPairRepository,
-            identityKeyRepository
+            identityKeyRepository,
+            contactRepository
         )
 
         messageDecryptor = MessageDecryptor(
@@ -89,6 +95,10 @@ class MessageEncryptorTest {
         )
     }
 
+    fun simpleCurve25519Test() {
+
+    }
+
     @Test
     fun shouldEncryptAndDecryptInitialMessage() = runTest {
 
@@ -100,7 +110,11 @@ class MessageEncryptorTest {
         val messageDTO = MessageDTO(
             from = alicePhoneNumber,
             to = bobPhoneNumber,
-            text = message
+            text = message,
+            nonceTimestamp = Instant.now().epochSecond,
+            nonce = AuthMessageHelper.generateNonce(),
+            authMessageSignature = ByteArray(32),
+            phoneNumber = alicePhoneNumber
         )
 
         val keyBundles = EncryptionSessionCreator.createKeyBundles()
@@ -143,19 +157,28 @@ class MessageEncryptorTest {
             bobEphemeralRatchetEccKeyPair = bobKeyBundle.ratchetEccKeyPair
         )
 
+        val bobEncryptionSession = EncryptionSessionCreator.encryptionSessionFromAliceInitialMessageEncryptionBundle(
+            bobPhoneNumber, initialMessageEncryptionBundle
+        )
+
+        Log.d("bobEncryptionSession", bobEncryptionSession.receiverChainKeyEntities.toString())
+        println(bobEncryptionSession.receiverChainKeyEntities.toString())
+
         Mockito.`when`(rootKeyRepository.getEncryptionSession(bobPhoneNumber)).thenReturn(
             null,                                                                             //return null at first because the session doesn't exist
-            EncryptionSessionCreator.encryptionSessionFromAliceInitialMessageEncryptionBundle(
-                bobPhoneNumber, initialMessageEncryptionBundle
-            )                                                                                       //return session as it was initialized
+            bobEncryptionSession                                                                                       //return session as it was initialized
         )
         Mockito.`when`(userRepository.getLocalUser()).thenReturn(aliceLocalUserEntity, bobLocalUserEntity)
         Mockito.`when`(aliceEncryptionSessionInitializer.getInitialMessageEncryptionBundle(bobPhoneNumber))
             .thenReturn(initialMessageEncryptionBundle)
 
+        val aliceEncryptionSession = EncryptionSessionCreator.encryptionSessionFromBobInitialMessageDecryptionBundle(
+            alicePhoneNumber, initialMessageDecryptionBundle
+        )
+
         Mockito.`when`(rootKeyRepository.getEncryptionSession(alicePhoneNumber)).thenReturn(
             null,
-            EncryptionSessionCreator.encryptionSessionFromBobInitialMessageDecryptionBundle(alicePhoneNumber, initialMessageDecryptionBundle)
+            aliceEncryptionSession
         )
 
         //when
@@ -200,7 +223,11 @@ class MessageEncryptorTest {
         val messageDTO = MessageDTO(
             from = alicePhoneNumber,
             to = bobPhoneNumber,
-            text = message
+            text = message,
+            nonceTimestamp = Instant.now().epochSecond,
+            nonce = AuthMessageHelper.generateNonce(),
+            authMessageSignature = ByteArray(32),
+            phoneNumber = alicePhoneNumber
         )
 
         val keyBundles = EncryptionSessionCreator.createKeyBundles()
@@ -266,5 +293,4 @@ class MessageEncryptorTest {
 
         Assert.assertEquals(message, decryptedMessage)
     }
-*/
 }

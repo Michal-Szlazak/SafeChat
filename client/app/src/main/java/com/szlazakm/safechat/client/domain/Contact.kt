@@ -7,7 +7,8 @@ data class Contact(
     val firstName: String,
     val lastName: String,
     val phoneNumber: String,
-    val photo: ImageBitmap?
+    val photo: ImageBitmap?,
+    var securityCode: String
 )
 
 fun Contact.toContactEntity(): ContactEntity {
@@ -15,6 +16,7 @@ fun Contact.toContactEntity(): ContactEntity {
         firstName = this.firstName,
         lastName = this.lastName,
         phoneNumber = this.phoneNumber,
-        photo = null
+        photo = null,
+        securityCode = this.securityCode
     )
 }

@@ -1,6 +1,7 @@
 package com.szlazakm.safechat.client.presentation
 
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -100,23 +101,19 @@ fun NavGraphBuilder.userCreationGraph(
             val state by vm.state.collectAsState()
 
             VerifyPinScreen(
-                onVerify = { verifyPin ->
-                    if(verifyPin == state.pin) {
-                        vm.saveUser(
-                            navController = navController,
-                            successDestination = UserCreationScreenRoutes.VerifyPhoneNumber,
-                            failureDestination = UserCreationScreenRoutes.SignIn
-                        )
-                        navController.navigate(UserCreationScreenRoutes.VerifyPhoneNumber.route)
-                    } else {
-                        navController.navigate(UserCreationScreenRoutes.SignInPin.route)
-                    }
+                viewModel = vm,
+                onInvalidPin = {
+                    navController.navigate(UserCreationScreenRoutes.SignInPin.route)
+                },
+                onUserNotCreated = {
+                    navController.navigate(UserCreationScreenRoutes.SignIn.route)
+                },
+                onUserCreated = {
+                    navController.navigate(UserCreationScreenRoutes.VerifyPhoneNumber.route)
                 }
             )
         }
          composable(UserCreationScreenRoutes.VerifyPhoneNumber.route) {
-
-    //            val state by signInViewModel.state.collectAsState()
 
              val parentEntry = remember(navController.currentBackStackEntry) {
                  navController.getBackStackEntry(UserCreationScreenRoutes.SignIn.route)

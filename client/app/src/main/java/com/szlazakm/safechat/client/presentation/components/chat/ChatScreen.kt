@@ -2,20 +2,25 @@ package com.szlazakm.safechat.client.presentation.components.chat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.szlazakm.safechat.client.presentation.events.ChatEvent
 
 @Composable
 fun ChatScreen(
-    viewModel: ChatViewModel
+    viewModel: ChatViewModel,
+    onInfoButtonClicked: () -> Unit
 ) {
 
     val selectedContact = viewModel.state.collectAsState().value.selectedContact
@@ -29,7 +34,19 @@ fun ChatScreen(
                         Text(text = "${it.firstName} ${it.lastName}")
                     }
                 },
-                backgroundColor = MaterialTheme.colors.primarySurface
+                backgroundColor = MaterialTheme.colors.primarySurface,
+                actions = {
+                    IconButton(onClick = {
+                        onInfoButtonClicked()
+                        println("Info button clicked!")
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = "Info",
+                            tint = Color.White // Adjust color if needed
+                        )
+                    }
+                }
             )
         },
         content = { innerPadding ->
@@ -43,9 +60,8 @@ fun ChatScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(bottom = 80.dp), // Reserve space for the input field
-                    reverseLayout = false // Ensures new messages appear at the bottom
+                    reverseLayout = true // Ensures new messages appear at the bottom
                 ) {
-
                     items(state.messages) { message ->
                         MessageListItem(message = message)
                     }

@@ -42,7 +42,7 @@ import com.szlazakm.safechat.client.data.entities.UserEntity
         MessageKeysEntity::class,
         IdentityKeyEntity::class
                ],
-    version = 17
+    version = 18
 )
 @TypeConverters(LocalDateTimeConverter::class)
 abstract class AppDatabase : RoomDatabase() {

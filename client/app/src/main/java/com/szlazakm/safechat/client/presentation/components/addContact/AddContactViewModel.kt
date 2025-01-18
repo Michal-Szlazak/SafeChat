@@ -3,6 +3,7 @@ package com.szlazakm.safechat.client.presentation.components.addContact
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.szlazakm.safechat.client.data.repositories.ContactRepository
+import com.szlazakm.safechat.client.data.repositories.UserRepository
 import com.szlazakm.safechat.client.domain.Contact
 import com.szlazakm.safechat.client.presentation.states.AddContactState
 import com.szlazakm.safechat.webclient.dtos.UserDTO
@@ -20,12 +21,27 @@ import javax.inject.Inject
 @HiltViewModel
 class AddContactViewModel @Inject constructor(
     private val repository: ContactRepository,
+    private val userRepository: UserRepository,
     private val retrofit: Retrofit
 ): ViewModel() {
 
     private val userWebService: UserWebService = retrofit.create(UserWebService::class.java)
-    private val _state: MutableStateFlow<AddContactState> = MutableStateFlow(AddContactState(userDTO = null))
+    private val _state: MutableStateFlow<AddContactState> = MutableStateFlow(
+        AddContactState(userDTO = null, localUser = null)
+    )
     val state: StateFlow<AddContactState> = _state
+
+    fun loadLocalUserData() {
+
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                val localUser = userRepository.getLocalUser()
+                _state.value = _state.value.copy(
+                    localUser = localUser
+                )
+            }
+        }
+    }
 
     fun findUserByPhone(phoneNumber: String) {
 

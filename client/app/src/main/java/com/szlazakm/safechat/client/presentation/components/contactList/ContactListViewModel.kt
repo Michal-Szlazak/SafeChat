@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.szlazakm.safechat.client.data.entities.ContactEntity
 import com.szlazakm.safechat.client.data.repositories.ContactRepository
+import com.szlazakm.safechat.client.data.repositories.UserRepository
 import com.szlazakm.safechat.client.data.services.ContactListener
 import com.szlazakm.safechat.client.data.services.MessageSaverService
 import com.szlazakm.safechat.client.domain.Contact
@@ -23,12 +24,12 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ContactListViewModel @Inject constructor(
-    private val contactRepository: ContactRepository
+    private val contactRepository: ContactRepository,
+    private val userRepository: UserRepository
 ): ViewModel(), ContactListener {
 
     private val _state = MutableStateFlow(ContactListState())
     val state: StateFlow<ContactListState> = _state
-
 
     fun loadContactList() {
 
@@ -40,7 +41,8 @@ class ContactListViewModel @Inject constructor(
             (Dispatchers.IO) {
 
                 _state.value = _state.value.copy(
-                    contacts = contactRepository.getAllContacts()
+                    contacts = contactRepository.getAllContacts(),
+                    localUserPhoneNumber = userRepository.getLocalUser().phoneNumber
                 )
             }
         }
@@ -65,7 +67,8 @@ class ContactListViewModel @Inject constructor(
                     firstName = "",
                     lastName = "",
                     phoneNumber = "",
-                    photo = null
+                    photo = null,
+                    securityCode = ""
                 )
             }
         }

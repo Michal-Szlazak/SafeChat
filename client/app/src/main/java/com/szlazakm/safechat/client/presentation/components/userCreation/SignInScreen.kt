@@ -29,17 +29,9 @@ fun SignInScreen(
     viewModel: SignInViewModel,
     onSignInClick: (phoneExtension: String, phoneNumber: String) -> Unit
 ) {
-    val state by viewModel.state.collectAsState()
     var phoneExtension by remember { mutableStateOf("+") }
     var phoneNumber by remember { mutableStateOf("") }
 
-    val context = LocalContext.current
-    LaunchedEffect(state.phoneVerifyError) {
-
-        state.phoneVerifyError.let { error ->
-            Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
-        }
-    }
 
     Column(
         modifier = Modifier
@@ -48,12 +40,12 @@ fun SignInScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        TextField(
-            value = phoneExtension,
-            onValueChange = { phoneExtension = it },
-            label = { Text("Phone Extension") },
-            keyboardOptions = KeyboardOptions1(keyboardType = KeyboardType.Phone)
-        )
+//        TextField(
+//            value = phoneExtension,
+//            onValueChange = { phoneExtension = it },
+//            label = { Text("Phone Extension") },
+//            keyboardOptions = KeyboardOptions1(keyboardType = KeyboardType.Phone)
+//        )
         Spacer(modifier = Modifier.height(16.dp))
         TextField(
             value = phoneNumber,

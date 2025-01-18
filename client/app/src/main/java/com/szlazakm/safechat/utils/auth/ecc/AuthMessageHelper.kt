@@ -1,6 +1,8 @@
 package com.szlazakm.safechat.utils.auth.ecc
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.whispersystems.curve25519.Curve25519
+import org.whispersystems.curve25519.Curve25519.BEST
 import java.security.SecureRandom
 import java.security.Security
 import java.security.Signature
@@ -14,20 +16,11 @@ class AuthMessageHelper {
 
     companion object {
 
-        private var signatureGenerator: Signature = Signature.getInstance(
-            "SHA256withECDSA", "BC"
-        )
-
-        private var SecureRandom: SecureRandom = SecureRandom()
+        val curve = Curve25519.getInstance(BEST)
 
         fun generateSignature(privateIdentityKey: ByteArray, message: ByteArray): ByteArray {
 
-            val privateKey = KeyConverter.toPrivateKey(privateIdentityKey)
-
-            signatureGenerator.initSign(privateKey)
-            signatureGenerator.update(message)
-
-            return signatureGenerator.sign()
+            return curve.calculateSignature(privateIdentityKey, message)
         }
 
         fun generateNonce(): ByteArray {

@@ -1,6 +1,7 @@
 package com.szlazakm.safechat.client.presentation
 
 import android.util.Log
+import androidx.activity.result.ActivityResultLauncher
 import androidx.compose.runtime.remember
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -13,6 +14,7 @@ import androidx.navigation.navArgument
 import com.szlazakm.safechat.client.presentation.components.addContact.AddContactScreen
 import com.szlazakm.safechat.client.presentation.components.addContact.AddContactViewModel
 import com.szlazakm.safechat.client.presentation.components.chat.ChatScreen
+import com.szlazakm.safechat.client.presentation.components.chat.ChatVerificationScreen
 import com.szlazakm.safechat.client.presentation.components.chat.ChatViewModel
 import com.szlazakm.safechat.client.presentation.components.contactList.ContactListScreen
 import com.szlazakm.safechat.client.presentation.components.contactList.ContactListViewModel
@@ -51,6 +53,7 @@ fun NavGraphBuilder.mainGraph(
                 Log.i("MainScreen", "Navigating to add contact")
 
                 val addContactViewModel = hiltViewModel<AddContactViewModel>()
+                addContactViewModel.loadLocalUserData()
                 val parentEntry = remember(navController.currentBackStackEntry) {
                     navController.getBackStackEntry(UserCreationScreenRoutes.MainScreen.route)
                 }
@@ -77,14 +80,39 @@ fun NavGraphBuilder.mainGraph(
 
                 chatViewModel.loadChat()
 
-                ChatScreen(viewModel = chatViewModel)
+                ChatScreen(
+                    viewModel = chatViewModel,
+                    onInfoButtonClicked = {
+                        navController.navigate(MainScreenRoutes.ChatVerification.route)
+                    }
+                )
+            }
+
+            composable(
+                route = MainScreenRoutes.ChatVerification.route,
+            ) {
+
+                Log.i("MainScreen", "Navigating to chat verification")
+
+                val parentEntry = remember(navController.currentBackStackEntry) {
+                    navController.getBackStackEntry(UserCreationScreenRoutes.MainScreen.route)
+                }
+                val chatViewModel: ChatViewModel = hiltViewModel(parentEntry)
+
+                ChatVerificationScreen(
+                    chatViewModel,
+                    onScanClicked = {
+                        Log.i("MainScreen", "Scan button clicked!")
+                    })
             }
         }
+
 }
 
 enum class MainScreenRoutes (val route: String) {
     MainScreen("main"),
     ContactList("contact-list"),
     Chat("chat/{phoneNumber}"),
-    AddContact("add-contact")
+    AddContact("add-contact"),
+    ChatVerification("chat-verification")
 }

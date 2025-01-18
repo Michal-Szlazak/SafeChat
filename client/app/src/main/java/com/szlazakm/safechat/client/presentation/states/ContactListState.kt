@@ -5,5 +5,6 @@ import com.szlazakm.safechat.client.domain.Contact
 data class ContactListState(
     val contacts: List<Contact> = emptyList(),
     val recentlyActiveContacts: List<Contact> = emptyList(),
-    val selectedContact: Contact? = null
+    val selectedContact: Contact? = null,
+    val localUserPhoneNumber: String = ""
 )

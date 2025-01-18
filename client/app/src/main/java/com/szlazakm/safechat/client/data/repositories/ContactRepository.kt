@@ -31,4 +31,8 @@ class ContactRepository @Inject constructor(context: Context) {
     fun contactExists(phoneNumber: String) : Boolean {
         return database.contactDao().getContact(phoneNumber) != null
     }
+
+    fun updateContact(contact: Contact) {
+        database.contactDao().updateContact(contact.toContactEntity())
+    }
 }

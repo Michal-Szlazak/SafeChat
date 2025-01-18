@@ -30,6 +30,7 @@ class PreKeyManager @Inject constructor(
     private val preKeyWebService: PreKeyWebService
 ) {
 
+    @Synchronized
     fun checkAndProvideOPK() {
 
         try {
@@ -77,7 +78,7 @@ class PreKeyManager @Inject constructor(
             } else {
                 Log.e(
                     "PreKeyManager",
-                    "Failed to get opks. Response code: ${response.code()}, message: ${response.raw()}"
+                    "Failed to get opks. Response code: ${response.code()}, message: ${response.errorBody()?.string()}"
                 )
                 return
             }
@@ -101,14 +102,6 @@ class PreKeyManager @Inject constructor(
 
     fun setSignedPreKey() {
         val localUser = userRepository.getLocalUser()
-
-        if(localUser == null) {
-            Log.d(
-                "PreKeyManager",
-                "Cannot check and provide OPKs - local user is not present."
-            )
-            return
-        }
 
         val privateIdentityKey = decode(localUser.privateIdentityKey)
         val signedPreKeys = EccKeyHelper.generateSignedKeyPair(privateIdentityKey)
@@ -160,7 +153,6 @@ class PreKeyManager @Inject constructor(
         val opkCreateDTOs = newOpks.map {
             opk -> OPKCreateDTO(
                 id = opk.id,
-//                preKey = encode((opk.keyPair.publicKey as DjbECPublicKey).publicKey)
                 preKey = encode(opk.publicKey)
             )
         }

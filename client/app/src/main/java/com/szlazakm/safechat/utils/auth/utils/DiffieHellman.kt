@@ -1,20 +1,17 @@
 package com.szlazakm.safechat.utils.auth.utils
 
-import com.szlazakm.safechat.utils.auth.ecc.KeyConverter
+import org.whispersystems.curve25519.Curve25519
 import javax.crypto.KeyAgreement
 
 class DiffieHellman {
 
     companion object {
+
+        val curve = Curve25519.getInstance(Curve25519.BEST)
+
         fun createSharedSecret(privateKeyBytes: ByteArray, publicKeyBytes: ByteArray): ByteArray {
 
-            val keyAgreement = KeyAgreement.getInstance("ECDH")
-            val privateKey = KeyConverter.toPrivateKey(privateKeyBytes)
-            val publicKey = KeyConverter.toPublicKey(publicKeyBytes)
-
-            keyAgreement.init(privateKey)
-            keyAgreement.doPhase(publicKey, true)
-            return keyAgreement.generateSecret()
+            return curve.calculateAgreement(publicKeyBytes, privateKeyBytes)
         }
     }
 }

@@ -10,7 +10,8 @@ data class ContactEntity(
     val phoneNumber: String,
     val firstName: String,
     val lastName: String,
-    val photo: String?
+    val photo: String?,
+    val securityCode: String
 )
 
 fun ContactEntity.toContact(): Contact {
@@ -18,6 +19,7 @@ fun ContactEntity.toContact(): Contact {
         firstName = this.firstName,
         lastName = this.lastName,
         phoneNumber = this.phoneNumber,
-        photo = null
+        photo = null,
+        securityCode = this.securityCode
     )
 }

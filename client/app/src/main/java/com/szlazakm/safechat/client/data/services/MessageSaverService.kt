@@ -1,13 +1,18 @@
 package com.szlazakm.safechat.client.data.services
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
 import android.util.Log
+import androidx.core.app.NotificationCompat
 import com.google.gson.Gson
+import com.szlazakm.safechat.R
 import com.szlazakm.safechat.client.data.entities.MessageEntity
 import com.szlazakm.safechat.client.data.entities.UserEntity
 import com.szlazakm.safechat.client.data.repositories.ContactRepository
+import com.szlazakm.safechat.client.data.repositories.IdentityKeyRepository
 import com.szlazakm.safechat.client.data.repositories.MessageRepository
 import com.szlazakm.safechat.client.data.repositories.UserRepository
 import com.szlazakm.safechat.client.domain.Contact
@@ -46,12 +51,17 @@ class MessageSaverService : Service(){
     @Inject
     lateinit var messageDecryptor: MessageDecryptor
 
+    @Inject
+    lateinit var identityKeyRepository: IdentityKeyRepository
+
     private val stompService: StompService = StompService()
     private val gson: Gson = Gson()
     private val serviceScope = CoroutineScope(Dispatchers.Default)
 
     private var messageListener: MessageListener? = null
     private var contactListener: ContactListener? = null
+
+    private lateinit var networkMonitor: NetworkMonitor
 
     fun setMessageListener(listener: MessageListener) {
         messageListener = listener
@@ -81,12 +91,35 @@ class MessageSaverService : Service(){
     override fun onCreate() {
         instance = this
         super.onCreate()
+
+        networkMonitor = NetworkMonitor(this)
+
+        networkMonitor.registerNetworkCallback(
+            onNetworkAvailable = {
+                reconnectStompService()
+                Log.d("MessageSaverService", "Network available.")
+                messageListener?.afterRecovery()
+            },
+            onNetworkLost = {
+                stompService.disconnect()
+                Log.d("MessageSaverService", "Network lost. Stomp service will be disconnected.")
+            }
+        )
+
         Log.d("SafeChat:MessageSaverService", "onCreate called")
+    }
+
+    private fun reconnectStompService() {
+        Log.d("MessageSaverService", "Network available. Reconnecting STOMP service...")
+        serviceScope.launch {
+            connectToUserQueue()
+        }
     }
 
     override fun onDestroy() {
         instance = null
         super.onDestroy()
+        stompService.disconnect()
         Log.d("SafeChat:MessageSaverService", "onDestroy called")
     }
 
@@ -108,7 +141,8 @@ class MessageSaverService : Service(){
         val newMessages = getNewMessages(localUser.phoneNumber)
         loadNewMessagesFromDB(newMessages ?: emptyList())
 
-        stompService.connect()
+        Log.d("SafeChat:MessageSaverService", "Subscribing to user queue: ${localUser.phoneNumber}")
+
         stompService.subscribeToTopic("/user/queue/${localUser.phoneNumber}") { message ->
 
             Log.d("SafeChat:MessageSaverService","received a message $message")
@@ -202,11 +236,24 @@ class MessageSaverService : Service(){
             return
         }
 
+        val publicIdentityKey = identityKeyRepository.getIdentityKey(userDTO.phoneNumber).publicKey
+
+        Log.d(
+            "SafeChat:MessageSaverService",
+            "Contact for phone: ${decryptedMessage.senderPhoneNumber} found.")
+
+        val localUser = userRepository.getLocalUser()
+
+        Log.d(
+            "SafeChat:MessageSaverService",
+            "Local user: $localUser")
+
         val newContact = Contact(
             firstName = userDTO.firstName,
             lastName = userDTO.lastName,
             phoneNumber = userDTO.phoneNumber,
-            photo = null
+            photo = null,
+            securityCode = Encoder.encode(publicIdentityKey) + localUser.publicIdentityKey
         )
 
         contactRepository.createContact(newContact)
@@ -227,12 +274,14 @@ class MessageSaverService : Service(){
                 "SafeChat:MessageSaverService",
                 "Failed to decrypt message from: ${outputEncryptedMessageDTO.from}"
             )
+            showNotification("Failed to decrypt message from: ${outputEncryptedMessageDTO.from}")
             return null
         } else{
             Log.d(
                 "SafeChat:MessageSaverService",
                 "Successfully decrypted message from: ${outputEncryptedMessageDTO.from}" +
                         " message: $decryptedMessage")
+            showNotification("New message from: ${outputEncryptedMessageDTO.from}")
         }
 
         val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS")
@@ -329,7 +378,8 @@ class MessageSaverService : Service(){
                     Log.d("SafeChat:MessageSaverService", "Successfully fetched new messages. Response: ${response.body()}")
                     response.body()
                 } else {
-                    Log.e("SafeChat:MessageSaverService", "Failed to fetch new messages.")
+                    Log.e("SafeChat:MessageSaverService", "Failed to fetch new messages." +
+                            " Message: ${response.errorBody()?.string()}")
                     null
                 }
             } catch (e: Exception) {
@@ -342,5 +392,33 @@ class MessageSaverService : Service(){
 
     override fun onBind(p0: Intent?): IBinder? {
         return null // We don't need binding, so returning null
+    }
+
+    private var notificationId = 0
+
+    private fun showNotification(message: String) {
+        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        val channelId = "safechat_notifications"
+        val channelName = "SafeChat Notifications"
+
+        // Create notification channel for Android O+
+        val channel = NotificationChannel(
+            channelId,
+            channelName,
+            NotificationManager.IMPORTANCE_HIGH
+        )
+        notificationManager.createNotificationChannel(channel)
+
+        val notification = NotificationCompat.Builder(this, channelId)
+            .setContentTitle("New Message")
+            .setContentText(message)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .build()
+
+
+        notificationManager.notify(notificationId, notification)
+
+        notificationId++
     }
 }

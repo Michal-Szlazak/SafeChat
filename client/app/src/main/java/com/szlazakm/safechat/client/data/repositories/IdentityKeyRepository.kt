@@ -16,4 +16,8 @@ class IdentityKeyRepository  @Inject constructor(context: Context) {
     fun createIdentityKey(identityKeyEntity: IdentityKeyEntity) {
         database.identityKeyDao().createIdentityKey(identityKeyEntity)
     }
+
+    fun getIdentityKey(phoneNumber: String): IdentityKeyEntity {
+        return database.identityKeyDao().getIdentityKey(phoneNumber)
+    }
 }

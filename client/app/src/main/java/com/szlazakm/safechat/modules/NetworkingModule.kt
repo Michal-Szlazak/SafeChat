@@ -18,8 +18,8 @@ class NetworkingModule {
     @Provides
     fun provideRetrofit(): Retrofit {
         return Retrofit.Builder()
-//            .baseUrl("http://10.0.2.2:8080") // for emulator
-            .baseUrl("https://safechat-986401487521.us-central1.run.app") // server on GCP
+            .baseUrl("http://10.0.2.2:8080") // for emulator
+//            .baseUrl("https://safechat-986401487521.us-central1.run.app") // server on GCP
             .addConverterFactory(JacksonConverterFactory.create())
             .build()
     }

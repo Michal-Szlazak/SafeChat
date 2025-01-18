@@ -16,6 +16,7 @@ import com.szlazakm.safechat.utils.auth.ecc.EccKeyPair
 import com.szlazakm.safechat.utils.auth.ecc.ReceiverChainKey
 import com.szlazakm.safechat.utils.auth.ecc.RootKey
 import com.szlazakm.safechat.utils.auth.utils.DiffieHellman
+import com.szlazakm.safechat.utils.auth.utils.MAC.Companion.toHex
 
 class EncryptionSessionCreator {
 
@@ -226,6 +227,8 @@ class EncryptionSessionCreator {
                 publicKey = initialMessageEncryptionBundle.bobPublicIdentityKey
             )
 
+            println("Alice " + phoneNumber + " " + senderChainKeyEntity.chainKey.toHex())
+
             return EncryptionSession(
                 rootKeyEntity = rootKeyEntity,
                 identityKeyEntity = identityKeyEntity,
@@ -270,6 +273,8 @@ class EncryptionSessionCreator {
                 privateKey = initialMessageDecryptionBundle.bobEphemeralRatchetEccKeyPair.privateKey
             )
 
+            println("Bob " + phoneNumber + " " + receiverChainKeyEntity.chainKey.toHex())
+
             return EncryptionSession(
                 rootKeyEntity = rootKeyEntity,
                 identityKeyEntity = identityKeyEntity,
@@ -279,4 +284,6 @@ class EncryptionSessionCreator {
             )
         }
     }
+
+    fun ByteArray.toHex(): String = joinToString(separator = "") { eachByte -> "%02x".format(eachByte) }
 }

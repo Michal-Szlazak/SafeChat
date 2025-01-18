@@ -14,7 +14,7 @@ interface MessageDao {
             " AND receiverPhoneNumber=:receiverPhoneNumber)" +
             " OR (senderPhoneNumber=:receiverPhoneNumber" +
             " AND receiverPhoneNumber=:senderPhoneNumber)" +
-            " ORDER BY timestamp ASC")
+            " ORDER BY timestamp DESC")
     fun getMessages(senderPhoneNumber: String, receiverPhoneNumber: String): List<MessageEntity>
 
 

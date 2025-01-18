@@ -7,6 +7,7 @@ import com.szlazakm.safechat.client.data.entities.EphemeralRatchetEccKeyPairEnti
 import com.szlazakm.safechat.client.data.entities.IdentityKeyEntity
 import com.szlazakm.safechat.client.data.entities.RootKeyEntity
 import com.szlazakm.safechat.client.data.entities.SenderChainKeyEntity
+import com.szlazakm.safechat.client.data.repositories.ContactRepository
 import com.szlazakm.safechat.client.data.repositories.EphemeralRatchetKeyPairRepository
 import com.szlazakm.safechat.client.data.repositories.IdentityKeyRepository
 import com.szlazakm.safechat.client.data.repositories.RootKeyRepository
@@ -23,6 +24,8 @@ import com.szlazakm.safechat.utils.auth.utils.PaddingHandler
 import com.szlazakm.safechat.webclient.dtos.EncryptedMessageDTO
 import com.szlazakm.safechat.webclient.dtos.MessageDTO
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.nio.charset.StandardCharsets
 import java.time.Instant
@@ -37,142 +40,166 @@ class MessageEncryptor @Inject constructor(
     private val rootKeyRepository: RootKeyRepository,
     private val senderChainKeyRepository: SenderChainKeyRepository,
     private val ephemeralRatchetKeyPairRepository: EphemeralRatchetKeyPairRepository,
-    private val identityKeyRepository: IdentityKeyRepository
+    private val identityKeyRepository: IdentityKeyRepository,
+    private val contactRepository: ContactRepository
 ) {
+
+    private val mutex = Mutex()
 
     suspend fun encryptMessage(messageDTO: MessageDTO) : EncryptedMessageDTO? {
 
-        val receiverPhoneNumber = messageDTO.to
-        val encryptionSession = rootKeyRepository.getEncryptionSession(receiverPhoneNumber)
+        mutex.withLock {
 
-        val localUser = userRepository.getLocalUser()
+            val receiverPhoneNumber = messageDTO.to
+            val encryptionSession = rootKeyRepository.getEncryptionSession(receiverPhoneNumber)
 
-        if(encryptionSession == null) {
-            Log.d("MessageEncryptor", "Encryption session is null")
+            val localUser = userRepository.getLocalUser()
 
-            val initialMessageEncryptionBundle = aliceEncryptionSessionInitializer
-                .getInitialMessageEncryptionBundle(receiverPhoneNumber)
+            if(encryptionSession == null) {
+                Log.d("MessageEncryptor", "Encryption session is null")
 
-            val session = createNewSession(receiverPhoneNumber, initialMessageEncryptionBundle)
+                val initialMessageEncryptionBundle = aliceEncryptionSessionInitializer
+                    .getInitialMessageEncryptionBundle(receiverPhoneNumber)
 
-            var chainKey = initialMessageEncryptionBundle.ratchetSendingChain.second
+                withContext(Dispatchers.IO) {
 
-            Log.d("SafeChat:MessageEncryptor", "Sending chain key: ${chainKey.key.toHex()}")
+                    val localUserPublicKey = localUser.publicIdentityKey
+                    val receiverPublicKey = Encoder.encode(initialMessageEncryptionBundle.bobPublicIdentityKey)
 
-            val cipherText = encryptMessage(
-                chainKey,
-                messageDTO.text
-            )
+                    val contact = contactRepository.getContact(receiverPhoneNumber)
+                    if(contact != null) {
+                        Log.d("MessageEncryptor", "Contact is not null")
+                        contact.securityCode = localUserPublicKey + receiverPublicKey
+                        contactRepository.updateContact(contact)
+                    }
+                }
 
-            val mac = MAC.createMac(
-                chainKey.getMessageKeys(),
-                receiverPublicKey = session.identityKeyEntity.publicKey,
-                senderPublicKey = Decoder.decode(localUser.publicIdentityKey),
-                encryptedMessage = cipherText
-            )
 
-            val nonce =  AuthMessageHelper.generateNonce()
-            val instant = Instant.now().epochSecond.toString()
-            val privateKeyBytes = Decoder.decode(userRepository.getLocalUser().privateIdentityKey)
-            val dataToSign = nonce.plus(Decoder.decode(instant))
-            val signature = AuthMessageHelper.generateSignature(
-                privateKeyBytes,
-                dataToSign
-            )
+                val session = createNewSession(receiverPhoneNumber, initialMessageEncryptionBundle)
 
-            val encryptedMessageDTO = EncryptedMessageDTO(
-                initial = true,
-                messageDTO.from,
-                messageDTO.to,
-                Encoder.encode(cipherText + mac ),
-                Encoder.encode(initialMessageEncryptionBundle.alicePublicIdentityKey),
-                Encoder.encode(initialMessageEncryptionBundle.aliceEphemeralPublicKey),
-                initialMessageEncryptionBundle.bobOpkId,
-                initialMessageEncryptionBundle.bobSignedPreKeyId,
-                Encoder.encode(initialMessageEncryptionBundle.aliceEphemeralRatchetEccKeyPair.publicKey),
-                chainKey.index,
-                session.senderChainKeyEntity.lastMessageBatchSize,
-                localUser.phoneNumber,
-                instant.toLong(),
-                nonce,
-                signature
-            )
+                var chainKey = initialMessageEncryptionBundle.ratchetSendingChain.second
 
-            chainKey = chainKey.getNextChainKey()
+                Log.d("SafeChat:MessageEncryptor", "Sending chain key: ${chainKey.key.toHex()}")
 
-            val updatedChainKeyEntity = SenderChainKeyEntity(
-                phoneNumber = receiverPhoneNumber,
-                chainKey = chainKey.key,
-                chainKeyIndex = 1,
-                lastMessageBatchSize = 0,
-                id = 0 //overwritten by db
-            )
-            senderChainKeyRepository.updateChainKey(updatedChainKeyEntity)
+                val cipherText = encryptMessage(
+                    chainKey,
+                    messageDTO.text
+                )
 
-            return encryptedMessageDTO
+                val mac = MAC.createMac(
+                    chainKey.getMessageKeys(),
+                    receiverPublicKey = session.identityKeyEntity.publicKey,
+                    senderPublicKey = Decoder.decode(localUser.publicIdentityKey),
+                    encryptedMessage = cipherText
+                )
 
-        } else {
+                val nonce =  AuthMessageHelper.generateNonce()
+                val instant = Instant.now().epochSecond.toString()
+                val privateKeyBytes = Decoder.decode(userRepository.getLocalUser().privateIdentityKey)
+                val dataToSign = nonce.plus(Decoder.decode(instant))
+                val signature = AuthMessageHelper.generateSignature(
+                    privateKeyBytes,
+                    dataToSign
+                )
 
-            Log.d("SafeChat:MessageEncryptor", "Encryption session is not null $encryptionSession")
+                val encryptedMessageDTO = EncryptedMessageDTO(
+                    initial = true,
+                    messageDTO.from,
+                    messageDTO.to,
+                    Encoder.encode(cipherText + mac ),
+                    Encoder.encode(initialMessageEncryptionBundle.alicePublicIdentityKey),
+                    Encoder.encode(initialMessageEncryptionBundle.aliceEphemeralPublicKey),
+                    initialMessageEncryptionBundle.bobOpkId,
+                    initialMessageEncryptionBundle.bobSignedPreKeyId,
+                    Encoder.encode(initialMessageEncryptionBundle.aliceEphemeralRatchetEccKeyPair.publicKey),
+                    chainKey.index,
+                    session.senderChainKeyEntity.lastMessageBatchSize,
+                    localUser.phoneNumber,
+                    instant.toLong(),
+                    nonce,
+                    signature
+                )
 
-            val chainKeyEntity = encryptionSession.senderChainKeyEntity
-            var chainKey = ChainKey(
-                chainKeyEntity.chainKey,
-                chainKeyEntity.chainKeyIndex
-            )
+                chainKey = chainKey.getNextChainKey()
 
-            Log.d("SafeChat:MessageEncryptor", "sender chain key: ${chainKey.key.toHex()}")
+                val updatedChainKeyEntity = SenderChainKeyEntity(
+                    phoneNumber = receiverPhoneNumber,
+                    chainKey = chainKey.key,
+                    chainKeyIndex = 1,
+                    lastMessageBatchSize = 0,
+                    id = 0 //overwritten by db
+                )
+                senderChainKeyRepository.updateChainKey(updatedChainKeyEntity)
 
-            val cipherText = encryptMessage(
-                chainKey,
-                messageDTO.text
-            )
+                return encryptedMessageDTO
 
-            val mac = MAC.createMac(
-                messageKeys = chainKey.getMessageKeys(),
-                receiverPublicKey = encryptionSession.identityKeyEntity.publicKey,
-                senderPublicKey = Decoder.decode(localUser.publicIdentityKey),
-                encryptedMessage = cipherText
-            )
-            val nonce =  AuthMessageHelper.generateNonce()
-            val instant = Instant.now().epochSecond.toString()
-            val privateKeyBytes = Decoder.decode(userRepository.getLocalUser().privateIdentityKey)
-            val dataToSign = nonce.plus(Decoder.decode(instant))
-            val signature = AuthMessageHelper.generateSignature(
-                privateKeyBytes,
-                dataToSign
-            )
+            } else {
 
-            val encryptedMessageDTO = EncryptedMessageDTO(
-                initial = false,
-                from = messageDTO.from,
-                to = messageDTO.to,
-                cipher = Encoder.encode(cipherText + mac),
-                aliceIdentityPublicKey = null,
-                aliceEphemeralPublicKey = null,
-                bobOpkId = null,
-                bobSpkId = null,
-                ephemeralRatchetKey = Encoder.encode(encryptionSession.ephemeralRatchetEccKeyPairEntity.publicKey),
-                messageIndex = chainKey.index,
-                lastMessageBatchSize = chainKeyEntity.lastMessageBatchSize,
-                phoneNumber = localUser.phoneNumber,
-                nonceTimestamp = instant.toLong(),
-                nonce = nonce,
-                authMessageSignature = signature
-            )
+                Log.d("SafeChat:MessageEncryptor", "Encryption session is not null $encryptionSession")
 
-            chainKey = chainKey.getNextChainKey()
+                val chainKeyEntity = encryptionSession.senderChainKeyEntity
+                var chainKey = ChainKey(
+                    chainKeyEntity.chainKey,
+                    chainKeyEntity.chainKeyIndex
+                )
 
-            val updatedChainKeyEntity = SenderChainKeyEntity(
-                phoneNumber = chainKeyEntity.phoneNumber,
-                chainKey = chainKey.key,
-                chainKeyIndex = chainKeyEntity.chainKeyIndex + 1,
-                lastMessageBatchSize = chainKeyEntity.lastMessageBatchSize,
-                id = chainKeyEntity.id
-            )
-            senderChainKeyRepository.updateChainKey(updatedChainKeyEntity)
+                Log.d("SafeChat:MessageEncryptor", "sender chain key: ${chainKey.key.toHex()}")
 
-            return encryptedMessageDTO
+                val cipherText = encryptMessage(
+                    chainKey,
+                    messageDTO.text
+                )
+
+                val mac = MAC.createMac(
+                    messageKeys = chainKey.getMessageKeys(),
+                    receiverPublicKey = encryptionSession.identityKeyEntity.publicKey,
+                    senderPublicKey = Decoder.decode(localUser.publicIdentityKey),
+                    encryptedMessage = cipherText
+                )
+
+                Log.d("SafeChat:MessageEncryptor", "MAC: ${mac.toHex()}")
+
+                val nonce = AuthMessageHelper.generateNonce()
+                val instant = Instant.now().epochSecond.toString()
+                val privateKeyBytes = Decoder.decode(userRepository.getLocalUser().privateIdentityKey)
+                val dataToSign = nonce.plus(Decoder.decode(instant))
+                val signature = AuthMessageHelper.generateSignature(
+                    privateKeyBytes,
+                    dataToSign
+                )
+
+                val encryptedMessageDTO = EncryptedMessageDTO(
+                    initial = false,
+                    from = messageDTO.from,
+                    to = messageDTO.to,
+                    cipher = Encoder.encode(cipherText + mac),
+                    aliceIdentityPublicKey = null,
+                    aliceEphemeralPublicKey = null,
+                    bobOpkId = null,
+                    bobSpkId = null,
+                    ephemeralRatchetKey = Encoder.encode(encryptionSession.ephemeralRatchetEccKeyPairEntity.publicKey),
+                    messageIndex = chainKey.index,
+                    lastMessageBatchSize = chainKeyEntity.lastMessageBatchSize,
+                    phoneNumber = localUser.phoneNumber,
+                    nonceTimestamp = instant.toLong(),
+                    nonce = nonce,
+                    authMessageSignature = signature
+                )
+
+                chainKey = chainKey.getNextChainKey()
+
+                val updatedChainKeyEntity = SenderChainKeyEntity(
+                    phoneNumber = chainKeyEntity.phoneNumber,
+                    chainKey = chainKey.key,
+                    chainKeyIndex = chainKeyEntity.chainKeyIndex + 1,
+                    lastMessageBatchSize = chainKeyEntity.lastMessageBatchSize,
+                    id = chainKeyEntity.id
+                )
+                senderChainKeyRepository.updateChainKey(updatedChainKeyEntity)
+
+                return encryptedMessageDTO
+
+            }
         }
     }
 

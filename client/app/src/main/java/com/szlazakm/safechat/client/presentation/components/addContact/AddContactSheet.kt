@@ -89,7 +89,8 @@ fun AddContactScreen(
                             firstName = user.firstName,
                             lastName = user.lastName,
                             phoneNumber = user.phoneNumber,
-                            photo = null
+                            photo = null,
+                            securityCode = "Send first message to generate security code"
                         )
 
                         viewModel.createContactIfNotExists(contact)

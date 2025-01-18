@@ -78,6 +78,7 @@ fun ContactListScreen(
             items(state.contacts) { contact ->
                 ContactListItem(
                     contact = contact,
+                    localUserPhoneNumber = state.localUserPhoneNumber,
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
