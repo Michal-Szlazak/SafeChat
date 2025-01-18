@@ -12,13 +12,13 @@ import com.szlazakm.chatserver.exceptionHandling.exceptions.UserNotFoundExceptio
 import com.szlazakm.chatserver.repositories.SPKRepository;
 import com.szlazakm.chatserver.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +27,11 @@ public class UserService {
     private final UserRepository userRepository;
     private final SPKRepository spkRepository;
     private final PasswordEncoder passwordEncoder;
+    private final SimpMessagingTemplate simpMessagingTemplate;
+
+    private final int OPK_MAX_SIZE = 10;
+    private final Double OPK_LOW_LEVEL = 0.3;
+
 
     public UUID createUser(UserCreateDTO userCreateDTO) {
 
@@ -81,6 +86,12 @@ public class UserService {
             opkList.remove(0);
             opkKeyId = opk.keyId;
             opkPreKey = opk.preKey;
+        }
+
+        if((double) opkList.size() / OPK_MAX_SIZE < OPK_LOW_LEVEL) {
+
+            simpMessagingTemplate.convertAndSend(
+                    "/user/notification/" + phoneNumber, "Refill your OPKs!");
         }
 
         userRepository.save(user);

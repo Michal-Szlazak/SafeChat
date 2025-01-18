@@ -26,39 +26,3 @@ spring:
     show-sql: true
     database-platform: org.hibernate.dialect.PostgreSQLDialect
 
-bucket4j:
-  enabled: true
-  filter-config-caching-enabled: true
-  filter-config-cache-name: filterConfigCache
-  filters:
-    - id: filter1
-      major-version: 1
-      strategy: all
-      cache-name: buckets
-      filter-method: servlet
-      filter-order: 1
-      http-content-type: application/json;charset=UTF-8
-      url: .*
-      rate-limits:
-        - cache-key: getRemoteAddr()
-          bandwidths:
-            - capacity: 30
-              time: 1
-              unit: minutes
-        - execute-predicates:
-            - name: PATH=/api/user**
-            - name: METHOD=GET
-          bandwidths:
-            - capacity: 30
-              time: 1
-              unit: minutes
-#      rate-limits:
-#      - execute-predicates:
-#          - name: PATH=/api/user
-#          - name: METHOD=GET
-#      - cache-key: getRemoteAddr()
-#        bandwidths:
-#        - capacity: 30
-#          time: 1
-#          unit: minutes
-

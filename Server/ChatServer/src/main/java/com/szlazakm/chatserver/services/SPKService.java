@@ -51,15 +51,12 @@ public class SPKService {
 
         boolean isSignatureVerified;
 
-        try {
-            isSignatureVerified = signatureVerifier.verifySignature(
-                    user.getIdentityKey(),
-                    spkCreateOrUpdateDTO.getSignedPreKey(),
-                    spkCreateOrUpdateDTO.getSignature()
-            );
-        } catch (InvalidKeySpecException | InvalidKeyException e) {
-            throw new SignatureVerifierException("Failed to verify the signed key. Reson: " + e.getMessage());
-        }
+
+        isSignatureVerified = signatureVerifier.verifySignature(
+                user.getIdentityKey(),
+                spkCreateOrUpdateDTO.getSignedPreKey(),
+                spkCreateOrUpdateDTO.getSignature()
+        );
 
         if(isSignatureVerified) {
             spkRepository.save(spk);

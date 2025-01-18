@@ -1,6 +1,7 @@
 package com.szlazakm.chatserver.utils;
 
 import org.springframework.stereotype.Service;
+import org.whispersystems.curve25519.Curve25519;
 
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
@@ -10,46 +11,38 @@ import java.util.Base64;
 
 @Service
 public class SignatureVerifier {
+    private final Curve25519 curve25519 = Curve25519.getInstance(Curve25519.BEST);
 
-    private final KeyFactory keyFactory;
-    private final Signature signature;
-
-    public SignatureVerifier() {
-        try {
-            keyFactory = KeyFactory.getInstance("EC", "BC");
-            signature = Signature.getInstance("SHA256withECDSA", "BC");
-
-        } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public boolean verifySignature(String signingKey, String signedKey, String signature)
-            throws InvalidKeySpecException, InvalidKeyException, SignatureException {
+    public boolean verifySignature(String signingKey, String signedKey, String signature) {
 
         byte[] signingKeyBytes = decode(signingKey);
         byte[] signedKeyBytes = decode(signedKey);
         byte[] signatureBytes = decode(signature);
 
-        KeySpec keySpec = new X509EncodedKeySpec(signingKeyBytes);
-        PublicKey publicKey = keyFactory.generatePublic(keySpec);
+//        this.signature.initVerify(publicKey);
+//        this.signature.update(signedKeyBytes);
+//        return this.signature.verify(signatureBytes);
 
-        this.signature.initVerify(publicKey);
-        this.signature.update(signedKeyBytes);
-        return this.signature.verify(signatureBytes);
+        return curve25519.verifySignature(
+                signingKeyBytes,
+                signedKeyBytes,
+                signatureBytes
+        );
     }
 
-    public boolean verifySignature(String signingKey, byte[] signedKey, byte[] signature)
-            throws InvalidKeySpecException, InvalidKeyException, SignatureException {
+    public boolean verifySignature(String signingKey, byte[] signedKey, byte[] signature) {
 
         byte[] signingKeyBytes = decode(signingKey);
 
-        KeySpec keySpec = new X509EncodedKeySpec(signingKeyBytes);
-        PublicKey publicKey = keyFactory.generatePublic(keySpec);
+//        this.signature.initVerify(publicKey);
+//        this.signature.update(signedKey);
+//        return this.signature.verify(signature);
 
-        this.signature.initVerify(publicKey);
-        this.signature.update(signedKey);
-        return this.signature.verify(signature);
+        return curve25519.verifySignature(
+                signingKeyBytes,
+                signedKey,
+                signature
+        );
     }
 
     private byte[] decode(String encodedString) {

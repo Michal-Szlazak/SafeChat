@@ -45,21 +45,7 @@ dependencies {
     implementation 'org.springframework.security:spring-security-web:6.2.1'
     implementation 'org.whispersystems:signal-protocol-java:2.8.1'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
-//    implementation 'com.bucket4j:bucket4j-core:8.10.1'
-    implementation 'com.giffing.bucket4j.spring.boot.starter:bucket4j-spring-boot-starter:0.12.8'
-    // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-cache
-    implementation 'org.springframework.boot:spring-boot-starter-cache:3.4.1'
-// https://mvnrepository.com/artifact/org.ehcache/ehcache
-    implementation  'org.ehcache:ehcache::jakarta'
-// https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-validation
-    implementation 'org.springframework.boot:spring-boot-starter-validation:3.4.1'
-// https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-core
-    implementation 'com.fasterxml.jackson.core:jackson-core:2.18.2'
-// https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.18.2'
-
-
-
+    implementation 'org.whispersystems:curve25519-java:0.5.0'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.spockframework:spock-core:2.4-M4-groovy-4.0'
