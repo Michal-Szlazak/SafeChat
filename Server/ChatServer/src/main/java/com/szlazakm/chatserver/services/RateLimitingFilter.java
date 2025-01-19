@@ -37,7 +37,7 @@ public class RateLimitingFilter implements Filter {
         requestCountsPerIpAddress.putIfAbsent(clientIpAddress, new AtomicInteger(0));
         AtomicInteger requestCount = requestCountsPerIpAddress.get(clientIpAddress);
 
-        log.debug("Requests for " + clientIpAddress + " : " + requestCount.toString());
+        log.info("Requests for " + clientIpAddress + " : " + requestCount.toString());
 
         // Increment the request count
         int requests = requestCount.incrementAndGet();
