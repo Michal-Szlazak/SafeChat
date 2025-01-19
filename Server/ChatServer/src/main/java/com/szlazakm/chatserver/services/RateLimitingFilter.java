@@ -31,19 +31,20 @@ public class RateLimitingFilter implements Filter {
         HttpServletRequest httpServletRequest = (HttpServletRequest) request;
         HttpServletResponse httpServletResponse = (HttpServletResponse) response;
 
-        String clientIpAddress = httpServletRequest.getRemoteAddr();
-
         // Initialize request count for the client IP address
+
+        String clientIpAddress = httpServletRequest.getHeader("X-Forwarded-For");
+        if (clientIpAddress == null || clientIpAddress.isEmpty()) {
+            clientIpAddress = httpServletRequest.getRemoteAddr(); // Fallback to default
+            log.info("Client ip address got from getRemoteAddr: " + clientIpAddress);
+        } else {
+            // Handle multiple IPs in X-Forwarded-For (e.g., "client, proxy1, proxy2")
+            clientIpAddress = clientIpAddress.split(",")[0].trim();
+            log.info("Client ip address got from forwarded header: " + clientIpAddress);
+        }
+
         requestCountsPerIpAddress.putIfAbsent(clientIpAddress, new AtomicInteger(0));
         AtomicInteger requestCount = requestCountsPerIpAddress.get(clientIpAddress);
-
-        String forwardedAddress = httpServletRequest.getHeader("X-Forwarded-For");
-
-        if(forwardedAddress != null) {
-            log.info("Forwarded from ip: " + forwardedAddress);
-        } else {
-            log.info("Forwarded from is null");
-        }
 
         log.info("Requests for " + clientIpAddress + " : " + requestCount.toString());
 
