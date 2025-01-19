@@ -37,6 +37,14 @@ public class RateLimitingFilter implements Filter {
         requestCountsPerIpAddress.putIfAbsent(clientIpAddress, new AtomicInteger(0));
         AtomicInteger requestCount = requestCountsPerIpAddress.get(clientIpAddress);
 
+        String forwardedAddress = httpServletRequest.getHeader("X-Forwarded-For");
+
+        if(forwardedAddress != null) {
+            log.info("Forwarded from ip: " + forwardedAddress);
+        } else {
+            log.info("Forwarded from is null");
+        }
+
         log.info("Requests for " + clientIpAddress + " : " + requestCount.toString());
 
         // Increment the request count
